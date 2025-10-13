@@ -25,6 +25,8 @@ router.post(
     });
     await ticket.save();
 
+    // publish an event saying that a ticket was created!
+
     res.status(201).send(ticket);
   }
 );
