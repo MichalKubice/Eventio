@@ -12,6 +12,14 @@ build:
         manual:
           - src: 'src/**/*.ts'
             dest: .
+    - image: eventio/tickets
+      context: tickets
+      docker:
+        dockerfile: Dockerfile
+      sync:
+        manual:
+          - src: 'src/**/*.ts'
+            dest: .
 manifests:
   rawYaml:
     - infra/k8s/*

@@ -2,23 +2,11 @@ import express from "express";
 import { json } from "body-parser";
 import mongoose from "mongoose";
 
-import {
-  currentUserRouter,
-  signinRouter,
-  signoutRouter,
-  signupRouter,
-} from "./routes/index";
-
 import { errorHandler } from "@mkeventio/shared";
 import { NotFoundError } from "@mkeventio/shared";
 
 const app = express();
 app.use(json());
-
-app.use(currentUserRouter);
-app.use(signinRouter);
-app.use(signoutRouter);
-app.use(signupRouter);
 
 app.all("*", (req, res, next) => {
   next(new NotFoundError());
@@ -31,7 +19,6 @@ const start = async () => {
     if (!process.env.JWT_KEY) {
       throw new Error("JWT_KEY must be defined");
     }
-
     if (!process.env.MONGO_URI) {
       throw new Error("MONGO_URI must be defined");
     } 
