@@ -9,8 +9,8 @@ import {
   signupRouter,
 } from "./routes/index";
 
-import { errorHandler } from "./middlewares/error-handler";
-import { NotFoundError } from "./errors/not-found-error";
+import { errorHandler } from "@mkeventio/shared";
+import { NotFoundError } from "@mkeventio/shared";
 
 const app = express();
 app.use(json());
