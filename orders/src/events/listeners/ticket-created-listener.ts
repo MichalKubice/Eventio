@@ -1,7 +1,7 @@
 import { BaseListener } from "@mkeventio/shared";
-import { EventCache } from "../../models/event-cache";
+import { TicketCache } from "../../models/ticket-cache";
 
-interface EventCreatedEvent {
+interface TicketCreatedEvent {
   id: string;
   title: string;
   description?: string;
@@ -13,11 +13,11 @@ interface EventCreatedEvent {
   version: number;
 }
 
-export class EventCreatedListener extends BaseListener<EventCreatedEvent> {
-  queue = "event:created";
+export class TicketCreatedListener extends BaseListener<TicketCreatedEvent> {
+  queue = "ticket:created";
 
-  async onMessage(data: EventCreatedEvent) {
-    const event = EventCache.build({
+  async onMessage(data: TicketCreatedEvent) {
+    const ticket = TicketCache.build({
       id: data.id,
       title: data.title,
       description: data.description,
@@ -29,8 +29,8 @@ export class EventCreatedListener extends BaseListener<EventCreatedEvent> {
       version: data.version,
     });
 
-    await event.save();
+    await ticket.save();
 
-    console.log(`✅ Event stored in Orders service cache: ${data.title}`);
+    console.log(`✅ Ticket stored in Orders service cache: ${data.title}`);
   }
 }

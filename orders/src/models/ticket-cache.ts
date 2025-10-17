@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
-interface EventCacheAttrs {
-  id: string; // eventId z Events služby
+interface TicketCacheAttrs {
+  id: string; // ticketId z Tickets služby
   title: string;
   description?: string;
   price: number;
@@ -12,7 +12,7 @@ interface EventCacheAttrs {
   version: number;
 }
 
-export interface EventCacheDoc extends mongoose.Document {
+export interface TicketCacheDoc extends mongoose.Document {
   title: string;
   description?: string;
   price: number;
@@ -23,15 +23,15 @@ export interface EventCacheDoc extends mongoose.Document {
   version: number;
 }
 
-interface EventCacheModel extends mongoose.Model<EventCacheDoc> {
-  build(attrs: EventCacheAttrs): EventCacheDoc;
-  findByEvent(event: {
+interface TicketCacheModel extends mongoose.Model<TicketCacheDoc> {
+  build(attrs: TicketCacheAttrs): TicketCacheDoc;
+  findByTicket(event: {
     id: string;
     version: number;
-  }): Promise<EventCacheDoc | null>;
+  }): Promise<TicketCacheDoc | null>;
 }
 
-const eventSchema = new mongoose.Schema(
+const ticketSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
     description: { type: String },
@@ -56,25 +56,29 @@ const eventSchema = new mongoose.Schema(
   }
 );
 
-eventSchema.set("versionKey", "version");
+// pro optimistic concurrency kontrolu (RabbitMQ event ordering)
+ticketSchema.set("versionKey", "version");
 
-eventSchema.statics.findByEvent = (event: { id: string; version: number }) => {
-  return EventCache.findOne({
+ticketSchema.statics.findByTicket = (event: {
+  id: string;
+  version: number;
+}) => {
+  return TicketCache.findOne({
     _id: event.id,
     version: event.version - 1,
   });
 };
 
-eventSchema.statics.build = (attrs: EventCacheAttrs) => {
-  return new EventCache({
+ticketSchema.statics.build = (attrs: TicketCacheAttrs) => {
+  return new TicketCache({
     _id: attrs.id,
     ...attrs,
   });
 };
 
-const EventCache = mongoose.model<EventCacheDoc, EventCacheModel>(
-  "EventCache",
-  eventSchema
+const TicketCache = mongoose.model<TicketCacheDoc, TicketCacheModel>(
+  "TicketCache",
+  ticketSchema
 );
 
-export { EventCache };
+export { TicketCache };

@@ -1,7 +1,7 @@
 import { BaseListener } from "@mkeventio/shared";
-import { EventCache } from "../../models/event-cache";
+import { TicketCache } from "../../models/ticket-cache";
 
-interface EventUpdatedEvent {
+interface TicketUpdatedEvent {
   id: string;
   title: string;
   description?: string;
@@ -13,21 +13,21 @@ interface EventUpdatedEvent {
   version: number;
 }
 
-export class EventUpdatedListener extends BaseListener<EventUpdatedEvent> {
-  queue = "event:updated";
+export class TicketUpdatedListener extends BaseListener<TicketUpdatedEvent> {
+  queue = "ticket:updated";
 
-  async onMessage(data: EventUpdatedEvent) {
-    const event = await EventCache.findByEvent({
+  async onMessage(data: TicketUpdatedEvent) {
+    const ticket = await TicketCache.findByTicket({
       id: data.id,
       version: data.version,
     });
 
-    if (!event) {
-      console.warn(`⚠️ Event not found or version mismatch: ${data.id}`);
+    if (!ticket) {
+      console.warn(`⚠️ Ticket not found or version mismatch: ${data.id}`);
       return;
     }
 
-    event.set({
+    ticket.set({
       title: data.title,
       description: data.description,
       price: data.price,
@@ -37,8 +37,8 @@ export class EventUpdatedListener extends BaseListener<EventUpdatedEvent> {
       status: data.status,
     });
 
-    await event.save();
+    await ticket.save();
 
-    console.log(`🔁 Event updated in Orders service cache: ${data.title}`);
+    console.log(`🔁 Ticket updated in Orders service cache: ${data.title}`);
   }
 }

@@ -8,7 +8,7 @@ import {
   BadRequestError,
 } from "@mkeventio/shared";
 import { Order, OrderStatus } from "../models/order";
-import { EventCache } from "../models/event-cache";
+import { TicketCache } from "../models/ticket-cache";
 import { OrderCreatedPublisher } from "../events/publishers/order-created-publisher";
 
 const router = express.Router();
@@ -32,7 +32,7 @@ router.post(
     try {
       const { eventId, quantity } = req.body;
 
-      const event = await EventCache.findById(eventId);
+      const event = await TicketCache.findById(eventId);
       if (!event) throw new NotFoundError();
 
       if (event.status !== "active") {

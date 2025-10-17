@@ -14,8 +14,8 @@ import {
 } from "./routes/index";
 
 import { rabbitWrapper } from "@mkeventio/shared";
-import { EventCreatedListener } from "./events/listeners/event-created-listener";
-import { EventUpdatedListener } from "./events/listeners/event-updated-listener";
+import { TicketCreatedListener } from "./events/listeners/ticket-created-listener";
+import { TicketUpdatedListener } from "./events/listeners/ticket-updated-listener";
 
 const app = express();
 app.set("trust proxy", true);
@@ -59,8 +59,8 @@ const start = async () => {
     await mongoose.connect("mongodb://orders-mongo-srv:27017/orders");
     console.log("Connected to MongoDb");
 
-    await new EventCreatedListener().listen();
-    await new EventUpdatedListener().listen();
+    await new TicketCreatedListener().listen();
+    await new TicketUpdatedListener().listen();
   } catch (err) {
     console.error(err);
   }

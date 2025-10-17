@@ -48,7 +48,7 @@ const start = async () => {
       throw new Error("MONGO_URI must be defined");
     }
     if (!process.env.RABBITMQ_URL)
-      throw new Error("RABBITMQ_URL must be defineds!");
+      throw new Error("RABBITMQ_URL must be defined!");
     await mongoose.connect("mongodb://tickets-mongo-srv:27017/tickets");
 
     console.log("Connected to MongoDb");
