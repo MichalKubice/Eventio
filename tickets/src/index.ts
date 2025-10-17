@@ -3,15 +3,15 @@ import { json } from "body-parser";
 import mongoose from "mongoose";
 import cookieSession from "cookie-session";
 import { errorHandler } from "@mkeventio/shared";
-import { NotFoundError, currentUser } from "@mkeventio/shared";
+import { NotFoundError, currentUser, rabbitWrapper } from "@mkeventio/shared";
 
 import {
   createTicketRouter,
   indexTicketRouter,
   showTicketRouter,
+  startSaleRouter,
   updateTicketRouter,
 } from "./routes/index";
-import { rabbitWrapper } from "@mkeventio/shared";
 
 import { OrderCancelledListener } from "./events/listeners/order-cancelled-listener";
 import { OrderCreatedListener } from "./events/listeners/order-created-listener";
@@ -32,12 +32,13 @@ app.use(createTicketRouter);
 app.use(indexTicketRouter);
 app.use(showTicketRouter);
 app.use(updateTicketRouter);
+app.use(startSaleRouter);
+
+app.use(errorHandler);
 
 app.all("*", (req, res, next) => {
   next(new NotFoundError());
 });
-
-app.use(errorHandler);
 
 const start = async () => {
   try {
@@ -45,7 +46,7 @@ const start = async () => {
       throw new Error("JWT_KEY must be defined");
     }
     if (!process.env.MONGO_URI) {
-      throw new Error("MONGO_URI must be defined");
+      throw new Error("MONGO_URI must be defineds");
     }
     if (!process.env.RABBITMQ_URL)
       throw new Error("RABBITMQ_URL must be defined!");

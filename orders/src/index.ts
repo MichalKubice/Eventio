@@ -13,7 +13,7 @@ import {
   showOrderRouter,
 } from "./routes/index";
 
-import { rabbitWrapper } from "@mkeventio/shared";
+import { rabbitWrapper, currentUser } from "@mkeventio/shared";
 import { TicketCreatedListener } from "./events/listeners/ticket-created-listener";
 import { TicketUpdatedListener } from "./events/listeners/ticket-updated-listener";
 
@@ -27,6 +27,8 @@ app.use(
   })
 );
 
+app.use(currentUser);
+
 app.use(json());
 
 app.use(createOrderRouter);
@@ -34,11 +36,11 @@ app.use(indexOrderRouter);
 app.use(showOrderRouter);
 app.use(deleteOrderRouter);
 
+app.use(errorHandler);
+
 app.all("*", (req, res, next) => {
   next(new NotFoundError());
 });
-
-app.use(errorHandler);
 
 const start = async () => {
   try {
@@ -51,7 +53,7 @@ const start = async () => {
     }
 
     if (!process.env.RABBITMQ_URL) {
-      throw new Error("RABBITMQ_URL must be defined");
+      throw new Error("RABBITMQ_URL must be defineds");
     }
 
     await rabbitWrapper.connect(process.env.RABBITMQ_URL);

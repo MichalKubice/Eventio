@@ -29,11 +29,13 @@ app.use(signinRouter);
 app.use(signoutRouter);
 app.use(signupRouter);
 
+app.use(errorHandler);
+
 app.all("*", (req, res, next) => {
   next(new NotFoundError());
 });
 
-app.use(errorHandler);
+
 
 const start = async () => {
   try {

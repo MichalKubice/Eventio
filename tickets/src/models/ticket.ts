@@ -80,7 +80,9 @@ const ticketSchema = new mongoose.Schema(
 );
 
 ticketSchema.pre("save", function (done) {
-  this.set("version", this.get("version") + 1);
+  if (!this.isNew) {
+    this.set("version", this.get("version") + 1);
+  }
   done();
 });
 
