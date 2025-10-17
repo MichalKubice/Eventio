@@ -1,5 +1,12 @@
-// import { Publisher, Subjects, TicketCreatedEvent } from '@rallycoding/common';
+import { BasePublisher } from "@mkeventio/shared";
 
-// export class TicketCreatedPublisher extends Publisher<TicketCreatedEvent> {
-//   subject: Subjects.TicketCreated = Subjects.TicketCreated;
-// }
+interface TicketCreatedEvent {
+  id: string;
+  title: string;
+  price: number;
+  userId: string;
+}
+
+export class TicketCreatedPublisher extends BasePublisher<TicketCreatedEvent> {
+  queue = "ticket:created";
+}

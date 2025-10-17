@@ -1,23 +1,16 @@
-// import { Message } from 'node-nats-streaming';
-// import { Subjects, Listener, TicketUpdatedEvent } from '@mkeventio/shared';
-// import { Ticket } from '../../models/ticket';
-// import { queueGroupName } from './queue-group-name';
+import { BaseListener } from "@mkeventio/shared";
+import { Ticket } from "../../models/ticket";
 
-// export class TicketUpdatedListener extends Listener<TicketUpdatedEvent> {
-//   subject: Subjects.TicketUpdated = Subjects.TicketUpdated;
-//   queueGroupName = queueGroupName;
+export class TicketUpdatedListener extends BaseListener<any> {
+  queue = "ticket:updated";
 
-//   async onMessage(data: TicketUpdatedEvent['data'], msg: Message) {
-//     const ticket = await Ticket.findByEvent(data);
+  async onMessage(data: any) {
+    const ticket = await Ticket.findById(data.id);
+    if (!ticket) throw new Error("Ticket not found");
 
-//     if (!ticket) {
-//       throw new Error('Ticket not found');
-//     }
+    ticket.set({ title: data.title, price: data.price });
+    await ticket.save();
 
-//     const { title, price } = data;
-//     ticket.set({ title, price });
-//     await ticket.save();
-
-//     msg.ack();
-//   }
-// }
+    console.log("✅ Ticket updated in orders service:", data.id);
+  }
+}

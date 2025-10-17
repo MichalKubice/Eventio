@@ -8,6 +8,10 @@ import { NotFoundError } from "@mkeventio/shared";
 
 import { deleteOrderRouter, newOrderRouter, indexOrderRouter, showOrderRouter } from "./routes/index";
 
+import { rabbitWrapper } from "@mkeventio/shared";
+import { TicketCreatedListener } from "./events/listeners/ticket-created-listener";
+import { TicketUpdatedListener } from "./events/listeners/ticket-updated-listener";
+
 const app = express();
 app.set("trust proxy", true);
 app.use(json());
@@ -24,7 +28,6 @@ app.use(
   })
 );
 
-
 app.all("*", (req, res, next) => {
   next(new NotFoundError());
 });
@@ -39,9 +42,18 @@ const start = async () => {
 
     if (!process.env.MONGO_URI) {
       throw new Error("MONGO_URI must be defined");
-    } 
-    await mongoose.connect("mongodb://auth-mongo-srv:27017/orders");
+    }
+
+    if (!process.env.RABBITMQ_URL) {
+      throw new Error("RABBITMQ_URL must be defined");
+    }
+
+    await rabbitWrapper.connect(process.env.RABBITMQ_URL);
+    console.log("Connected to RabbitMQ!");
+    await mongoose.connect("mongodb://orders-mongo-srv:27017/orders");
     console.log("Connected to MongoDb");
+    new TicketCreatedListener().listen();
+    new TicketUpdatedListener().listen();
   } catch (err) {
     console.error(err);
   }

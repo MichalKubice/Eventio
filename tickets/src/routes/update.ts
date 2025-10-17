@@ -8,6 +8,7 @@ import {
   BadRequestError,
 } from "@mkeventio/shared";
 import { Ticket } from "../models/ticket";
+import { TicketUpdatedPublisher } from "../events/publishers/ticket-updated-publisher";
 
 const router = express.Router();
 
@@ -43,6 +44,7 @@ router.put(
     await ticket.save();
 
     // publish an event saying that a ticket was updated!
+    await new TicketUpdatedPublisher().publish(ticket);
 
     res.send(ticket);
   }

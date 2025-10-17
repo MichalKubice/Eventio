@@ -1,31 +1,24 @@
-// import { Listener, OrderCancelledEvent, Subjects } from '@rallycoding/common';
-// import { Message } from 'node-nats-streaming';
-// import { queueGroupName } from './queue-group-name';
-// import { Ticket } from '../../models/ticket';
-// import { TicketUpdatedPublisher } from '../publishers/ticket-updated-publisher';
+import { BaseListener } from "@mkeventio/shared";
+import { Ticket } from "../../models/ticket";
+import { TicketCreatedPublisher } from "../publishers/ticket-created-publisher";
 
-// export class OrderCancelledListener extends Listener<OrderCancelledEvent> {
-//   subject: Subjects.OrderCancelled = Subjects.OrderCancelled;
-//   queueGroupName = queueGroupName;
+export class OrderCancelledListener extends BaseListener<any> {
+  queue = "order:cancelled";
 
-//   async onMessage(data: OrderCancelledEvent['data'], msg: Message) {
-//     const ticket = await Ticket.findById(data.ticket.id);
+  async onMessage(data: any) {
+    const ticket = await Ticket.findById(data.ticket.id);
+    if (!ticket) throw new Error("Ticket not found");
 
-//     if (!ticket) {
-//       throw new Error('Ticket not found');
-//     }
+    ticket.set({ orderId: undefined });
+    await ticket.save();
 
-//     ticket.set({ orderId: undefined });
-//     await ticket.save();
-//     await new TicketUpdatedPublisher(this.client).publish({
-//       id: ticket.id,
-//       orderId: ticket.orderId,
-//       userId: ticket.userId,
-//       price: ticket.price,
-//       title: ticket.title,
-//       version: ticket.version,
-//     });
+    await new TicketCreatedPublisher().publish({
+      id: ticket.id,
+      title: ticket.title,
+      price: ticket.price,
+      userId: ticket.userId,
+    });
 
-//     msg.ack();
-//   }
-// }
+    console.log("✅ Ticket unreserved:", data.ticket.id);
+  }
+}

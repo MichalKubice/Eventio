@@ -1,21 +1,17 @@
-// // import { Subjects, Listener, TicketCreatedEvent } from '@mkeventio/shared';
-// import { Ticket } from '../../models/ticket';
-// import { queueGroupName } from './queue-group-name';
+import { BaseListener } from "@mkeventio/shared";
+import { Ticket } from "../../models/ticket";
 
-// export class TicketCreatedListener extends Listener<TicketCreatedEvent> {
-//   subject: Subjects.TicketCreated = Subjects.TicketCreated;
-//   queueGroupName = queueGroupName;
+export class TicketCreatedListener extends BaseListener<any> {
+  queue = "ticket:created";
 
-//   async onMessage(data: TicketCreatedEvent['data'], msg: Message) {
-//     const { id, title, price } = data;
+  async onMessage(data: any) {
+    const ticket = Ticket.build({
+      id: data.id,
+      title: data.title,
+      price: data.price,
+    });
+    await ticket.save();
 
-//     const ticket = Ticket.build({
-//       id,
-//       title,
-//       price,
-//     });
-//     await ticket.save();
-
-//     msg.ack();
-//   }
-// }
+    console.log("✅ Ticket stored in orders service:", data.title);
+  }
+}

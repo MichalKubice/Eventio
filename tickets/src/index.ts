@@ -10,6 +10,7 @@ import {
   showTicketRouter,
   updateTicketRouter,
 } from "./routes/index";
+import { rabbitWrapper } from "@mkeventio/shared";
 
 const app = express();
 app.use(json());
@@ -41,8 +42,15 @@ const start = async () => {
     if (!process.env.MONGO_URI) {
       throw new Error("MONGO_URI must be defined");
     }
-    await mongoose.connect("mongodb://auth-mongo-srv:27017/auth");
+    if (!process.env.RABBITMQ_URL)
+      throw new Error("RABBITMQ_URL must be defined!");
+    await mongoose.connect("mongodb://tickets-mongo-srv:27017/tickets");
+
     console.log("Connected to MongoDb");
+
+    await rabbitWrapper.connect(process.env.RABBITMQ_URL);
+
+    console.log("✅ Connected to RabbitMQ");
   } catch (err) {
     console.error(err);
   }
