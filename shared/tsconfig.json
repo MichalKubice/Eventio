@@ -4,6 +4,7 @@
     "target": "es2020",
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "strict": true
+    "strict": true,
+    "outDir": "build"
   }
 }
