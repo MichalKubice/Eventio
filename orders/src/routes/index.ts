@@ -1,6 +1,11 @@
 import { indexOrderRouter } from "./get";
-import { newOrderRouter } from "./new";
+import { createOrderRouter } from "./create";
 import { showOrderRouter } from "./show";
 import { deleteOrderRouter } from "./delete";
 
-export { indexOrderRouter, newOrderRouter, showOrderRouter, deleteOrderRouter };
+export {
+  indexOrderRouter,
+  createOrderRouter,
+  showOrderRouter,
+  deleteOrderRouter,
+};

@@ -1,5 +1,13 @@
 import { BasePublisher } from "@mkeventio/shared";
 
-export class OrderCancelledPublisher extends BasePublisher<any> {
+export interface OrderCancelledEvent {
+  id: string;
+  userId: string;
+  eventId: string;
+  quantity: number;
+  version: number;
+}
+
+export class OrderCancelledPublisher extends BasePublisher<OrderCancelledEvent> {
   queue = "order:cancelled";
 }

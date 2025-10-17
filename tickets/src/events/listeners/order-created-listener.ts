@@ -1,24 +1,48 @@
 import { BaseListener } from "@mkeventio/shared";
 import { Ticket } from "../../models/ticket";
-import { TicketCreatedPublisher } from "../publishers/ticket-created-publisher";
+import { TicketUpdatedPublisher } from "../publishers/ticket-updated-publisher";
 
-export class OrderCreatedListener extends BaseListener<any> {
+interface OrderCreatedEvent {
+  id: string;
+  eventId: string;
+  quantity: number;
+}
+
+export class OrderCreatedListener extends BaseListener<OrderCreatedEvent> {
   queue = "order:created";
 
-  async onMessage(data: any) {
-    const ticket = await Ticket.findById(data.ticket.id);
-    if (!ticket) throw new Error("Ticket not found");
+  async onMessage(data: OrderCreatedEvent) {
+    const ticket = await Ticket.findById(data.eventId);
 
-    ticket.set({ orderId: data.id });
+    if (!ticket) {
+      throw new Error("Event not found");
+    }
+
+    if (ticket.ticketsAvailable < data.quantity) {
+      console.warn(
+        `⚠️ Nedostatek lístků pro event ${ticket.id}. Zbývá ${ticket.ticketsAvailable}, požadováno ${data.quantity}`
+      );
+      return;
+    }
+
+    ticket.ticketsAvailable -= data.quantity;
     await ticket.save();
 
-    await new TicketCreatedPublisher().publish({
+    await new TicketUpdatedPublisher().publish({
       id: ticket.id,
       title: ticket.title,
+      description: ticket.description,
       price: ticket.price,
       userId: ticket.userId,
+      totalTickets: ticket.totalTickets,
+      ticketsAvailable: ticket.ticketsAvailable,
+      startSaleAt: ticket.startSaleAt.toISOString(),
+      status: ticket.status,
+      version: ticket.version,
     });
 
-    console.log("✅ Ticket reserved by order:", data.id);
+    console.log(
+      `✅ Lístky rezervovány (${data.quantity}) pro objednávku ${data.id}. Zbývá ${ticket.ticketsAvailable}.`
+    );
   }
 }

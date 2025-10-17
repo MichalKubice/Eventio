@@ -1,15 +1,23 @@
-import express, { Request, Response } from 'express';
+import express, { NextFunction, Request, Response } from "express";
 import { requireAuth } from "@mkeventio/shared";
-import { Order } from '../models/order';
+import { Order } from "../models/order";
 
 const router = express.Router();
 
-router.get('/api/orders', requireAuth, async (req: Request, res: Response) => {
-  const orders = await Order.find({
-    userId: req.currentUser!.id,
-  }).populate('ticket');
+router.get(
+  "/api/orders",
+  requireAuth,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orders = await Order.find({
+        userId: req.currentUser!.id,
+      });
 
-  res.send(orders);
-});
+      res.send(orders);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 export { router as indexOrderRouter };

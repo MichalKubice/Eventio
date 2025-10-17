@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import cookieSession from "cookie-session";
 import { errorHandler } from "@mkeventio/shared";
 import { NotFoundError, currentUser } from "@mkeventio/shared";
+
 import {
   createTicketRouter,
   indexTicketRouter,
@@ -11,6 +12,9 @@ import {
   updateTicketRouter,
 } from "./routes/index";
 import { rabbitWrapper } from "@mkeventio/shared";
+
+import { OrderCancelledListener } from "./events/listeners/order-cancelled-listener";
+import { OrderCreatedListener } from "./events/listeners/order-created-listener";
 
 const app = express();
 app.use(json());
@@ -21,6 +25,7 @@ app.use(
     secure: process.env.NODE_ENV !== "test",
   })
 );
+
 app.use(currentUser);
 
 app.use(createTicketRouter);
@@ -43,7 +48,7 @@ const start = async () => {
       throw new Error("MONGO_URI must be defined");
     }
     if (!process.env.RABBITMQ_URL)
-      throw new Error("RABBITMQ_URL must be defined!");
+      throw new Error("RABBITMQ_URL must be defineds!");
     await mongoose.connect("mongodb://tickets-mongo-srv:27017/tickets");
 
     console.log("Connected to MongoDb");
@@ -51,6 +56,9 @@ const start = async () => {
     await rabbitWrapper.connect(process.env.RABBITMQ_URL);
 
     console.log("✅ Connected to RabbitMQ");
+
+    await new OrderCancelledListener().listen();
+    await new OrderCreatedListener().listen();
   } catch (err) {
     console.error(err);
   }
