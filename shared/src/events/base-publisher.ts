@@ -1,12 +1,13 @@
 import { rabbitWrapper } from "../rabbit/rabbit-wrapper";
 
 export abstract class BasePublisher<T> {
-  abstract queue: string;
+  abstract exchange: string;
 
   async publish(data: T) {
     const channel = rabbitWrapper.channel;
-    await channel.assertQueue(this.queue);
-    channel.sendToQueue(this.queue, Buffer.from(JSON.stringify(data)));
-    console.log(`📤 Event published to ${this.queue}`);
+    await channel.assertExchange(this.exchange, "fanout", { durable: false });
+    channel.publish(this.exchange, "", Buffer.from(JSON.stringify(data)));
+
+    console.log(`📢 Event published to exchange: ${this.exchange}`);
   }
 }
