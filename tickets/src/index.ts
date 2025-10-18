@@ -17,6 +17,26 @@ import { OrderCancelledListener } from "./events/listeners/order-cancelled-liste
 import { OrderCreatedListener } from "./events/listeners/order-created-listener";
 import { OrderCompletedListener } from "./events/listeners/order-completed-listener";
 
+
+const connectRabbitWithRetry = async (
+  url: string,
+  retries = 10,
+  delay = 3000
+) => {
+  for (let i = 1; i <= retries; i++) {
+    try {
+      await rabbitWrapper.connect(url);
+      console.log("✅ Connected to RabbitMQ");
+      return;
+    } catch (err) {
+      console.warn(`🐇 RabbitMQ not ready (attempt ${i}/${retries})`);
+      if (i === retries) throw err;
+      await new Promise((res) => setTimeout(res, delay));
+    }
+  }
+};
+
+
 const app = express();
 app.use(json());
 
