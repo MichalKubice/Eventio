@@ -14,7 +14,8 @@ interface TicketCreatedEvent {
 }
 
 export class TicketCreatedListener extends BaseListener<TicketCreatedEvent> {
-  queue = "ticket:created";
+  exchange = "ticket:created";
+  queueName = "orders-ticket-created";
 
   async onMessage(data: TicketCreatedEvent) {
     const t = TicketCache.build({

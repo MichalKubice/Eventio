@@ -9,5 +9,5 @@ export interface OrderCancelledEvent {
 }
 
 export class OrderCancelledPublisher extends BasePublisher<OrderCancelledEvent> {
-  queue = "order:cancelled";
+  exchange = "order:cancelled";
 }

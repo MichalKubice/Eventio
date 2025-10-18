@@ -7,13 +7,14 @@ interface OrderRejectedEvent {
 }
 
 export class OrderRejectedListener extends BaseListener<OrderRejectedEvent> {
-  queue = "order:rejected";
+  exchange = "order:rejected";
+  queueName = "payments-order-rejected";
 
   async onMessage(data: OrderRejectedEvent) {
     const payments = await Payment.find({ orderId: data.id });
     for (const p of payments) {
       if (p.status === "succeeded") {
-        p.status = PaymentStatus.Refunded
+        p.status = PaymentStatus.Refunded;
         await p.save();
 
         //sending money back

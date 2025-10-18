@@ -9,5 +9,5 @@ interface OrderCompletedEvent {
 }
 
 export class OrderCompletedPublisher extends BasePublisher<OrderCompletedEvent> {
-  queue = "order:completed";
+  exchange = "order:completed";
 }

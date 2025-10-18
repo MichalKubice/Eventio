@@ -13,11 +13,12 @@ import {
   showOrderRouter,
 } from "./routes/index";
 
-import { rabbitWrapper, currentUser } from "@mkeventio/shared";
+import { currentUser, connectRabbitWithRetry } from "@mkeventio/shared";
 import { TicketCreatedListener } from "./events/listeners/ticket-created-listener";
 import { TicketUpdatedListener } from "./events/listeners/ticket-updated-listener";
 import { OrderAcceptedListener } from "./events/listeners/order-accepted-listener";
 import { OrderRejectedListener } from "./events/listeners/order-rejected-listener";
+import { OrderCompletedListener } from "./events/listeners/order-completed-listener";
 
 const app = express();
 app.set("trust proxy", true);
@@ -58,8 +59,7 @@ const start = async () => {
       throw new Error("RABBITMQ_URL must be defineds");
     }
 
-    await rabbitWrapper.connect(process.env.RABBITMQ_URL);
-    console.log("Connected to RabbitMQs!");
+    await connectRabbitWithRetry(process.env.RABBITMQ_URL);
     await mongoose.connect("mongodb://orders-mongo-srv:27017/orders");
     console.log("Connected to MongoDb");
 
@@ -67,6 +67,7 @@ const start = async () => {
     await new TicketUpdatedListener().listen();
     await new OrderAcceptedListener().listen();
     await new OrderRejectedListener().listen();
+    await new OrderCompletedListener().listen();
   } catch (err) {
     console.error(err);
   }

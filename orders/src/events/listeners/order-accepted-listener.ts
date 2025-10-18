@@ -3,10 +3,16 @@ import { Order, OrderStatus } from "../../models/order";
 
 interface OrderAcceptedEvent {
   orderId: string;
+  userId: string;
+  eventId: string;
+  quantity: number;
+  pricePerTicket: number;
+  version: number;
 }
 
 export class OrderAcceptedListener extends BaseListener<OrderAcceptedEvent> {
-  queue = "order:accepted";
+  exchange = "order:accepted";
+  queueName = "orders-order-accepted";
 
   async onMessage(data: OrderAcceptedEvent) {
     const order = await Order.findById(data.orderId);

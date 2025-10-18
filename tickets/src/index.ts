@@ -2,8 +2,8 @@ import express from "express";
 import { json } from "body-parser";
 import mongoose from "mongoose";
 import cookieSession from "cookie-session";
-import { errorHandler } from "@mkeventio/shared";
-import { NotFoundError, currentUser, rabbitWrapper } from "@mkeventio/shared";
+import { connectRabbitWithRetry, errorHandler } from "@mkeventio/shared";
+import { NotFoundError, currentUser } from "@mkeventio/shared";
 
 import {
   createTicketRouter,
@@ -16,26 +16,6 @@ import {
 import { OrderCancelledListener } from "./events/listeners/order-cancelled-listener";
 import { OrderCreatedListener } from "./events/listeners/order-created-listener";
 import { OrderCompletedListener } from "./events/listeners/order-completed-listener";
-
-
-const connectRabbitWithRetry = async (
-  url: string,
-  retries = 10,
-  delay = 3000
-) => {
-  for (let i = 1; i <= retries; i++) {
-    try {
-      await rabbitWrapper.connect(url);
-      console.log("✅ Connected to RabbitMQ");
-      return;
-    } catch (err) {
-      console.warn(`🐇 RabbitMQ not ready (attempt ${i}/${retries})`);
-      if (i === retries) throw err;
-      await new Promise((res) => setTimeout(res, delay));
-    }
-  }
-};
-
 
 const app = express();
 app.use(json());
@@ -75,7 +55,7 @@ const start = async () => {
 
     console.log("Connected to MongoDb");
 
-    await rabbitWrapper.connect(process.env.RABBITMQ_URL);
+    await connectRabbitWithRetry(process.env.RABBITMQ_URL);
 
     console.log("✅ Connected to RabbitMQ");
 
@@ -88,7 +68,7 @@ const start = async () => {
 };
 
 app.listen(3000, () => {
-  console.log("Ticket service listening on port 3000s.");
+  console.log("Ticket service listening on port 3000.");
 });
 
 start();

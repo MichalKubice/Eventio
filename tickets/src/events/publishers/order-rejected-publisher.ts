@@ -6,5 +6,5 @@ export interface OrderRejectedEvent {
 }
 
 export class OrderRejectedPublisher extends BasePublisher<OrderRejectedEvent> {
-  queue = "order:rejected";
+  exchange = "order:rejected";
 }

@@ -10,7 +10,8 @@ interface OrderCompletedEvent {
 }
 
 export class OrderCompletedListener extends BaseListener<OrderCompletedEvent> {
-  queue = "order:completed";
+  exchange = "order:completed";
+  queueName = "tickets-order-completed";
 
   async onMessage(data: OrderCompletedEvent) {
     const ticket = await Ticket.findById(data.eventId);
@@ -31,6 +32,8 @@ export class OrderCompletedListener extends BaseListener<OrderCompletedEvent> {
       version: ticket.version,
     });
 
-    console.log(`💰 Sold ${data.quantity} (ticket ${ticket.id}), version=${ticket.version}`);
+    console.log(
+      `💰 Sold ${data.quantity} (ticket ${ticket.id}), version=${ticket.version}`
+    );
   }
 }

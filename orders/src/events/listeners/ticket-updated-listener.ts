@@ -14,7 +14,8 @@ interface TicketUpdatedEvent {
 }
 
 export class TicketUpdatedListener extends BaseListener<TicketUpdatedEvent> {
-  queue = "ticket:updated";
+  exchange = "ticket:updated";
+  queueName = "orders-ticket-updated";
 
   async onMessage(data: TicketUpdatedEvent) {
     const t = await TicketCache.findById(data.id);

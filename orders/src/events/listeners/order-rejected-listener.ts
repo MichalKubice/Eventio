@@ -7,13 +7,16 @@ interface OrderRejectedEvent {
 }
 
 export class OrderRejectedListener extends BaseListener<OrderRejectedEvent> {
-  queue = "order:rejected";
+  exchange = "order:rejected";
+  queueName = "orders-order-rejected";
 
   async onMessage(data: OrderRejectedEvent) {
     const order = await Order.findById(data.orderId);
     if (!order) throw new Error("Order not found");
     order.status = OrderStatus.Cancelled;
     await order.save();
-    console.log(`❌ Order ${order.id} cancelled (reason=${data.reason || "n/a"})`);
+    console.log(
+      `❌ Order ${order.id} cancelled (reason=${data.reason || "n/a"})`
+    );
   }
 }

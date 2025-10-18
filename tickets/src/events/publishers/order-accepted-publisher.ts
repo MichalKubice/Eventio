@@ -1,9 +1,14 @@
 import { BasePublisher } from "@mkeventio/shared";
 
-export interface OrderAcceptedEvent {
+interface OrderAcceptedEvent {
   orderId: string;
+  userId: string;
+  eventId: string;
+  quantity: number;
+  pricePerTicket: number;
+  version: number;
 }
 
 export class OrderAcceptedPublisher extends BasePublisher<OrderAcceptedEvent> {
-  queue = "order:accepted";
+  exchange = "order:accepted";
 }

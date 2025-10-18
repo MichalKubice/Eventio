@@ -1,7 +1,7 @@
 import { BasePublisher } from "@mkeventio/shared";
 
 export interface OrderCreatedEvent {
-  id: string;
+  orderId: string;
   userId: string;
   eventId: string;
   quantity: number;
@@ -12,5 +12,5 @@ export interface OrderCreatedEvent {
 }
 
 export class OrderCreatedPublisher extends BasePublisher<OrderCreatedEvent> {
-  queue = "order:created";
+  exchange = "order:created";
 }

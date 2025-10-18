@@ -13,5 +13,5 @@ export interface TicketUpdatedEvent {
 }
 
 export class TicketUpdatedPublisher extends BasePublisher<TicketUpdatedEvent> {
-  queue = "ticket:updated";
+  exchange = "ticket:updated";
 }

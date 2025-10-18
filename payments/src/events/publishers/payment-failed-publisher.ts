@@ -6,5 +6,5 @@ interface PaymentFailedEvent {
 }
 
 export class PaymentFailedPublisher extends BasePublisher<PaymentFailedEvent> {
-  queue = "payment:failed";
+  exchange = "payment:failed";
 }

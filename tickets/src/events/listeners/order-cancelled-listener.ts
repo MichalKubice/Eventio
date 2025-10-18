@@ -9,7 +9,8 @@ interface OrderCancelledEvent {
 }
 
 export class OrderCancelledListener extends BaseListener<OrderCancelledEvent> {
-  queue = "order:cancelled";
+  exchange = "order:cancelled";
+  queueName = "tickets-order-cancelled";
   async onMessage(_data: OrderCancelledEvent) {
     // no-op zatím (až bude Redis, vrátíme rezervace)
     console.log("ℹ️ Order cancelled (Tickets noop for now).");

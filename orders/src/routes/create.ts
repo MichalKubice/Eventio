@@ -47,7 +47,7 @@ router.post(
       await order.save();
 
       await new OrderCreatedPublisher().publish({
-        id: order.id,
+        orderId: order.id,
         userId: order.userId,
         eventId: order.eventId,
         quantity: order.quantity,
