@@ -14,9 +14,7 @@ router.delete(
   requireAuth,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { orderId } = req.params;
-      const order = await Order.findById(orderId);
-
+      const order = await Order.findById(req.params.orderId);
       if (!order) throw new NotFoundError();
       if (order.userId !== req.currentUser!.id) throw new NotAuthorizedError();
 
@@ -25,9 +23,9 @@ router.delete(
 
       await new OrderCancelledPublisher().publish({
         id: order.id,
+        userId: order.userId,
         eventId: order.eventId,
         quantity: order.quantity,
-        userId: order.userId,
         version: order.version,
       });
 
@@ -35,6 +33,7 @@ router.delete(
     } catch (err) {
       next(err);
     }
+   
   }
 );
 

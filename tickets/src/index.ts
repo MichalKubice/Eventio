@@ -15,6 +15,7 @@ import {
 
 import { OrderCancelledListener } from "./events/listeners/order-cancelled-listener";
 import { OrderCreatedListener } from "./events/listeners/order-created-listener";
+import { OrderCompletedListener } from "./events/listeners/order-completed-listener";
 
 const app = express();
 app.use(json());
@@ -58,15 +59,16 @@ const start = async () => {
 
     console.log("✅ Connected to RabbitMQ");
 
-    await new OrderCancelledListener().listen();
     await new OrderCreatedListener().listen();
+    await new OrderCancelledListener().listen();
+    await new OrderCompletedListener().listen();
   } catch (err) {
     console.error(err);
   }
 };
 
 app.listen(3000, () => {
-  console.log("Ticket service listening on port 3000.");
+  console.log("Ticket service listening on port 3000s.");
 });
 
 start();

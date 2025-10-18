@@ -16,6 +16,8 @@ import {
 import { rabbitWrapper, currentUser } from "@mkeventio/shared";
 import { TicketCreatedListener } from "./events/listeners/ticket-created-listener";
 import { TicketUpdatedListener } from "./events/listeners/ticket-updated-listener";
+import { OrderAcceptedListener } from "./events/listeners/order-accepted-listener";
+import { OrderRejectedListener } from "./events/listeners/order-rejected-listener";
 
 const app = express();
 app.set("trust proxy", true);
@@ -63,13 +65,15 @@ const start = async () => {
 
     await new TicketCreatedListener().listen();
     await new TicketUpdatedListener().listen();
+    await new OrderAcceptedListener().listen();
+    await new OrderRejectedListener().listen();
   } catch (err) {
     console.error(err);
   }
 };
 
 app.listen(3000, () => {
-  console.log("Orders service listening on port 3000.");
+  console.log("Orders service listening on port 3000s.");
 });
 
 start();

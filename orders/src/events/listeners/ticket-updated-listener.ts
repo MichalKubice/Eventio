@@ -7,7 +7,7 @@ interface TicketUpdatedEvent {
   description?: string;
   price: number;
   totalTickets: number;
-  ticketsAvailable: number;
+  soldTickets: number;
   startSaleAt: string;
   status: "scheduled" | "active" | "ended";
   version: number;
@@ -17,28 +17,32 @@ export class TicketUpdatedListener extends BaseListener<TicketUpdatedEvent> {
   queue = "ticket:updated";
 
   async onMessage(data: TicketUpdatedEvent) {
-    const ticket = await TicketCache.findByTicket({
-      id: data.id,
-      version: data.version,
-    });
-
-    if (!ticket) {
-      console.warn(`⚠️ Ticket not found or version mismatch: ${data.id}`);
+    const t = await TicketCache.findById(data.id);
+    if (!t) {
+      console.warn(`⚠️ Ticket not in cache yet: ${data.id}`);
       return;
     }
 
-    ticket.set({
+    // Jednoduchá ochrana proti out-of-order
+    if (data.version <= t.version) {
+      console.warn(
+        `↩️ Outdated ticket update ignored (have v${t.version}, got v${data.version})`
+      );
+      return;
+    }
+
+    t.set({
       title: data.title,
       description: data.description,
       price: data.price,
       totalTickets: data.totalTickets,
-      ticketsAvailable: data.ticketsAvailable,
+      soldTickets: data.soldTickets,
       startSaleAt: new Date(data.startSaleAt),
       status: data.status,
+      version: data.version,
     });
+    await t.save();
 
-    await ticket.save();
-
-    console.log(`🔁 Ticket updated in Orders service cache: ${data.title}`);
+    console.log(`🔁 Ticket cache updated to v${data.version}: ${data.title}`);
   }
 }

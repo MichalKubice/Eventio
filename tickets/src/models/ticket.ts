@@ -1,26 +1,26 @@
 import mongoose from "mongoose";
 
-interface TicketAttrs {
+export interface TicketAttrs {
   title: string;
   description?: string;
   price: number;
   userId: string;
   totalTickets: number;
-  ticketsAvailable?: number;
   startSaleAt: Date;
   status?: "scheduled" | "active" | "ended";
 }
 
-interface TicketDoc extends mongoose.Document {
+export interface TicketDoc extends mongoose.Document {
   title: string;
   description?: string;
   price: number;
   userId: string;
   totalTickets: number;
-  ticketsAvailable: number;
+  soldTickets: number; // klíčové – prodané kusy
   startSaleAt: Date;
   status: "scheduled" | "active" | "ended";
   version: number;
+  ticketsAvailable(): number; // vypočet dostupných (bez Redis)
 }
 
 interface TicketModel extends mongoose.Model<TicketDoc> {
@@ -29,44 +29,19 @@ interface TicketModel extends mongoose.Model<TicketDoc> {
 
 const ticketSchema = new mongoose.Schema(
   {
-    title: {
-      type: String,
-      required: true,
-    },
-    description: {
-      type: String,
-    },
-    price: {
-      type: Number,
-      required: true,
-    },
-    userId: {
-      type: String,
-      required: true,
-    },
-    totalTickets: {
-      type: Number,
-      required: true,
-      min: 1,
-    },
-    ticketsAvailable: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
-    startSaleAt: {
-      type: Date,
-      required: true,
-    },
+    title: { type: String, required: true },
+    description: { type: String },
+    price: { type: Number, required: true, min: 0 },
+    userId: { type: String, required: true },
+    totalTickets: { type: Number, required: true, min: 1 },
+    soldTickets: { type: Number, required: true, default: 0, min: 0 },
+    startSaleAt: { type: Date, required: true },
     status: {
       type: String,
       enum: ["scheduled", "active", "ended"],
       default: "scheduled",
     },
-    version: {
-      type: Number,
-      default: 0,
-    },
+    version: { type: Number, default: 0 },
   },
   {
     toJSON: {
@@ -79,21 +54,27 @@ const ticketSchema = new mongoose.Schema(
   }
 );
 
+// OCC: verze neroste při prvním uložení (version=0 na create)
 ticketSchema.pre("save", function (done) {
   if (!this.isNew) {
+    // @ts-ignore
     this.set("version", this.get("version") + 1);
   }
   done();
 });
 
+ticketSchema.methods.ticketsAvailable = function (): number {
+  return Math.max(this.totalTickets - this.soldTickets, 0);
+};
+
 ticketSchema.statics.build = (attrs: TicketAttrs) => {
   return new Ticket({
     ...attrs,
-    ticketsAvailable: attrs.ticketsAvailable ?? attrs.totalTickets,
     status: attrs.status ?? "scheduled",
   });
 };
 
-const Ticket = mongoose.model<TicketDoc, TicketModel>("Ticket", ticketSchema);
-
-export { Ticket };
+export const Ticket = mongoose.model<TicketDoc, TicketModel>(
+  "Ticket",
+  ticketSchema
+);

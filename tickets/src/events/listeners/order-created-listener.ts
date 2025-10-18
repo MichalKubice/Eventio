@@ -1,11 +1,15 @@
 import { BaseListener } from "@mkeventio/shared";
 import { Ticket } from "../../models/ticket";
-import { TicketUpdatedPublisher } from "../publishers/ticket-updated-publisher";
+import { OrderAcceptedPublisher } from "../publishers/order-accepted-publisher";
+import { OrderRejectedPublisher } from "../publishers/order-rejected-publisher";
 
 interface OrderCreatedEvent {
   id: string;
-  eventId: string;
+  userId: string;
+  eventId: string; // ticketId
   quantity: number;
+  expiresAt: string;
+  version: number;
 }
 
 export class OrderCreatedListener extends BaseListener<OrderCreatedEvent> {
@@ -13,36 +17,20 @@ export class OrderCreatedListener extends BaseListener<OrderCreatedEvent> {
 
   async onMessage(data: OrderCreatedEvent) {
     const ticket = await Ticket.findById(data.eventId);
+    if (!ticket) throw new Error("Ticket not found");
 
-    if (!ticket) {
-      throw new Error("Event not found");
+    // Bez Redis: jen pevná kontrola na základě prodaných kusů
+    const available = ticket.ticketsAvailable();
+    if (ticket.status === "active" && available >= data.quantity) {
+      // přijmout (rezervace doplníme přes Redis později)
+      await new OrderAcceptedPublisher().publish({ orderId: data.id });
+      console.log(`✅ Order accepted by Tickets (${data.id})`);
+    } else {
+      await new OrderRejectedPublisher().publish({
+        orderId: data.id,
+        reason: "not_enough_tickets",
+      });
+      console.log(`❌ Order rejected by Tickets (${data.id})`);
     }
-
-    if (ticket.ticketsAvailable < data.quantity) {
-      console.warn(
-        `⚠️ Nedostatek lístků pro event ${ticket.id}. Zbývá ${ticket.ticketsAvailable}, požadováno ${data.quantity}`
-      );
-      return;
-    }
-
-    ticket.ticketsAvailable -= data.quantity;
-    await ticket.save();
-
-    await new TicketUpdatedPublisher().publish({
-      id: ticket.id,
-      title: ticket.title,
-      description: ticket.description,
-      price: ticket.price,
-      userId: ticket.userId,
-      totalTickets: ticket.totalTickets,
-      ticketsAvailable: ticket.ticketsAvailable,
-      startSaleAt: ticket.startSaleAt.toISOString(),
-      status: ticket.status,
-      version: ticket.version,
-    });
-
-    console.log(
-      `✅ Lístky rezervovány (${data.quantity}) pro objednávku ${data.id}. Zbývá ${ticket.ticketsAvailable}.`
-    );
   }
 }

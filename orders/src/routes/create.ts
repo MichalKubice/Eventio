@@ -1,5 +1,5 @@
-import express, { NextFunction, Request, Response } from "express";
 import mongoose from "mongoose";
+import express, { NextFunction, Request, Response } from "express";
 import { body } from "express-validator";
 import {
   requireAuth,
@@ -12,48 +12,37 @@ import { TicketCache } from "../models/ticket-cache";
 import { OrderCreatedPublisher } from "../events/publishers/order-created-publisher";
 
 const router = express.Router();
-const EXPIRATION_WINDOW_SECONDS = 15 * 60; // 15 minut
+
+const EXPIRATION_WINDOW_SECONDS = 15 * 60;
 
 router.post(
   "/api/orders",
   requireAuth,
   [
-    body("eventId")
-      .not()
-      .isEmpty()
+    body("ticketId")
       .custom((id: string) => mongoose.Types.ObjectId.isValid(id))
-      .withMessage("Valid eventId must be provided"),
-    body("quantity")
-      .isInt({ gt: 0 })
-      .withMessage("Quantity must be greater than 0"),
+      .withMessage("Valid ticketId is required"),
+    body("quantity").isInt({ gt: 0 }).withMessage("Quantity must be > 0"),
   ],
   validateRequest,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { eventId, quantity } = req.body;
+      const { ticketId, quantity } = req.body;
 
-      const event = await TicketCache.findById(eventId);
-      if (!event) throw new NotFoundError();
+      const ticket = await TicketCache.findById(ticketId);
+      if (!ticket) throw new NotFoundError();
+      if (ticket.status !== "active")
+        throw new BadRequestError("Ticket sale not active");
 
-      if (event.status !== "active") {
-        throw new BadRequestError("Event is not available for sale");
-      }
-      if (event.ticketsAvailable < quantity) {
-        throw new BadRequestError("Not enough tickets available");
-      }
-
-      const expiration = new Date();
-      expiration.setSeconds(
-        expiration.getSeconds() + EXPIRATION_WINDOW_SECONDS
-      );
+      const expiresAt = new Date(Date.now() + EXPIRATION_WINDOW_SECONDS * 1000);
 
       const order = Order.build({
         userId: req.currentUser!.id,
-        status: OrderStatus.Created,
-        expiresAt: expiration,
-        eventId: event.id,
+        eventId: ticket.id,
         quantity,
-        pricePerTicket: event.price,
+        pricePerTicket: ticket.price, // snapshot ceny
+        expiresAt,
+        status: OrderStatus.PendingValidation,
       });
       await order.save();
 
@@ -67,7 +56,6 @@ router.post(
         pricePerTicket: order.pricePerTicket,
         version: order.version,
       });
-
       res.status(201).send(order);
     } catch (err) {
       next(err);

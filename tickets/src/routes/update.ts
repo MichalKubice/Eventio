@@ -1,9 +1,9 @@
 import express, { NextFunction, Request, Response } from "express";
 import { body } from "express-validator";
 import {
+  requireAuth,
   validateRequest,
   NotFoundError,
-  requireAuth,
   NotAuthorizedError,
 } from "@mkeventio/shared";
 import { Ticket } from "../models/ticket";
@@ -15,61 +15,20 @@ router.put(
   "/api/tickets/:id",
   requireAuth,
   [
-    body("title").not().isEmpty().withMessage("Title is required"),
-    body("price")
-      .isFloat({ gt: 0 })
-      .withMessage("Price must be greater than 0"),
-    body("description")
-      .optional()
-      .isString()
-      .isLength({ max: 1000 })
-      .withMessage("Description is too long"),
-    body("totalTickets")
-      .optional()
-      .isInt({ gt: 0 })
-      .withMessage("Total tickets must be greater than 0"),
-    body("startSaleAt")
-      .optional()
-      .isISO8601()
-      .toDate()
-      .withMessage("Start sale date must be a valid date"),
-    body("status")
-      .optional()
-      .isIn(["scheduled", "active", "ended"])
-      .withMessage("Invalid status value"),
+    body("title").optional().not().isEmpty(),
+    body("price").optional().isFloat({ gt: 0 }),
   ],
   validateRequest,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const ticket = await Ticket.findById(req.params.id);
+      if (!ticket) throw new NotFoundError();
+      if (ticket.userId !== req.currentUser!.id) throw new NotAuthorizedError();
 
-      if (!ticket) {
-        throw new NotFoundError();
-      }
-
-      // if (ticket.orderId) {
-      //   throw new BadRequestError("Cannot edit a reserved ticket");
-      // }
-
-      if (ticket.userId !== req.currentUser!.id) {
-        throw new NotAuthorizedError();
-      }
-
-      const { title, description, price, totalTickets, startSaleAt, status } =
-        req.body;
-
-      ticket.set({
-        ...(title && { title }),
-        ...(description && { description }),
-        ...(price && { price }),
-        ...(totalTickets && { totalTickets }),
-        ...(startSaleAt && { startSaleAt }),
-        ...(status && { status }),
-      });
-
-      if (totalTickets && totalTickets < ticket.ticketsAvailable) {
-        ticket.ticketsAvailable = totalTickets;
-      }
+      const { title, description, price } = req.body;
+      if (title !== undefined) ticket.title = title;
+      if (description !== undefined) ticket.description = description;
+      if (price !== undefined) ticket.price = price;
 
       await ticket.save();
 
@@ -78,9 +37,8 @@ router.put(
         title: ticket.title,
         description: ticket.description,
         price: ticket.price,
-        userId: ticket.userId,
         totalTickets: ticket.totalTickets,
-        ticketsAvailable: ticket.ticketsAvailable,
+        soldTickets: ticket.soldTickets,
         startSaleAt: ticket.startSaleAt.toISOString(),
         status: ticket.status,
         version: ticket.version,

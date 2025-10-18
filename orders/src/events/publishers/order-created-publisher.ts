@@ -5,9 +5,9 @@ export interface OrderCreatedEvent {
   userId: string;
   eventId: string;
   quantity: number;
-  pricePerTicket: number;
-  status: "created" | "awaiting:payment" | "complete" | "cancelled";
+  status: string; // "pending:validation"
   expiresAt: string;
+  pricePerTicket: number;
   version: number;
 }
 

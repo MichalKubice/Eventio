@@ -5,9 +5,8 @@ export interface TicketUpdatedEvent {
   title: string;
   description?: string;
   price: number;
-  userId: string;
   totalTickets: number;
-  ticketsAvailable: number;
+  soldTickets: number;
   startSaleAt: string;
   status: "scheduled" | "active" | "ended";
   version: number;

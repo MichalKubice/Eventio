@@ -1,28 +1,29 @@
 import mongoose from "mongoose";
 
-enum OrderStatus {
-   Created = "created",
-   Cancelled = "cancelled",
-   AwaitingPayment = "awaiting:payment",
-   Complete = "complete",
- }
+export enum OrderStatus {
+  Created = "created", // přijato API
+  PendingValidation = "pending:validation", // čeká na Tickets (order:accepted/rejected)
+  AwaitingPayment = "awaiting:payment",
+  Cancelled = "cancelled",
+  Complete = "complete",
+}
 
 interface OrderAttrs {
   userId: string;
-  status?: OrderStatus;
+  eventId: string; // ticketId
+  quantity: number;
+  pricePerTicket: number; // snapshot
   expiresAt: Date;
-  eventId: string; // ID eventu (z Events service)
-  quantity: number; // Počet objednaných lístků
-  pricePerTicket: number; // Cena v době objednávky (snapshot)
+  status?: OrderStatus;
 }
 
-interface OrderDoc extends mongoose.Document {
+export interface OrderDoc extends mongoose.Document {
   userId: string;
-  status: OrderStatus;
-  expiresAt: Date;
   eventId: string;
   quantity: number;
   pricePerTicket: number;
+  expiresAt: Date;
+  status: OrderStatus;
   version: number;
 }
 
@@ -33,16 +34,16 @@ interface OrderModel extends mongoose.Model<OrderDoc> {
 const orderSchema = new mongoose.Schema(
   {
     userId: { type: String, required: true },
-    status: {
-      type: String,
-      required: true,
-      enum: Object.values(OrderStatus),
-      default: OrderStatus.Created,
-    },
-    expiresAt: { type: mongoose.Schema.Types.Date },
     eventId: { type: String, required: true },
     quantity: { type: Number, required: true, min: 1 },
     pricePerTicket: { type: Number, required: true, min: 0 },
+    expiresAt: { type: mongoose.Schema.Types.Date, required: true },
+    status: {
+      type: String,
+      enum: Object.values(OrderStatus),
+      default: OrderStatus.PendingValidation,
+      required: true,
+    },
   },
   {
     toJSON: {
@@ -56,10 +57,6 @@ const orderSchema = new mongoose.Schema(
 
 orderSchema.set("versionKey", "version");
 
-orderSchema.statics.build = (attrs: OrderAttrs) => {
-  return new Order(attrs);
-};
+orderSchema.statics.build = (attrs: OrderAttrs) => new Order(attrs);
 
-const Order = mongoose.model<OrderDoc, OrderModel>("Order", orderSchema);
-
-export { Order, OrderStatus };
+export const Order = mongoose.model<OrderDoc, OrderModel>("Order", orderSchema);
