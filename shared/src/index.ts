@@ -15,3 +15,4 @@ export * from "./events/base-publisher";
 export * from "./events/subjects";
 
 export * from "./rabbit/rabbit-wrapper";
+export * from "./rabbit/connect-with-retry";
