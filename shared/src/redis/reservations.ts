@@ -8,6 +8,8 @@ export const getReservedCount = async (ticketId: string): Promise<number> => {
   return v ? parseInt(v, 10) : 0;
 };
 
+const keyOrderSnapshot = (orderId: string) => `order:${orderId}:snapshot`;
+
 export const reserveTickets = async (
   orderId: string,
   ticketId: string,
@@ -19,6 +21,7 @@ export const reserveTickets = async (
 
   multi.incrBy(keyReserved(ticketId), quantity);
   multi.hIncrBy(keyOrderItems(orderId), ticketId, quantity);
+  multi.hIncrBy(keyOrderSnapshot(orderId), ticketId, quantity);
   if (ttlSeconds && ttlSeconds > 0) {
     multi.expire(keyOrderItems(orderId), ttlSeconds);
   }
@@ -41,8 +44,12 @@ export const releaseTickets = async (
 
 export const releaseAllForOrder = async (orderId: string) => {
   const cli = redisWrapper.client;
-  const items = await cli.hGetAll(keyOrderItems(orderId));
-  if (!items || Object.keys(items).length === 0) return;
+  const items = await cli.hGetAll(keyOrderSnapshot(orderId));
+
+  if (!items || Object.keys(items).length === 0) {
+    console.warn(`⚠️ No snapshot found for expired order ${orderId}`);
+    return;
+  }
 
   const multi = cli.multi();
   for (const [ticketId, qtyStr] of Object.entries(items)) {
@@ -51,6 +58,11 @@ export const releaseAllForOrder = async (orderId: string) => {
       multi.decrBy(keyReserved(ticketId), qty);
     }
   }
+
+  multi.del(keyOrderSnapshot(orderId));
   multi.del(keyOrderItems(orderId));
   await multi.exec();
+
+  console.log(`🔁 Released reservations for expired order ${orderId}`);
 };
+
