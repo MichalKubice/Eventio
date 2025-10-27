@@ -16,3 +16,6 @@ export * from "./events/subjects";
 
 export * from "./rabbit/rabbit-wrapper";
 export * from "./rabbit/connect-with-retry";
+
+export * from "./redis/redis-wrapper";
+export * from "./redis/reservations";
