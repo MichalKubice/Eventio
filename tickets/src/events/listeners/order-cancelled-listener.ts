@@ -1,9 +1,9 @@
 import { BaseListener } from "@mkeventio/shared";
+import { releaseAllForOrder } from "@mkeventio/shared";
 
-// Bez Redis zatím není co dělat: zrušení pending nemění soldTickets.
 interface OrderCancelledEvent {
-  id: string;
-  eventId: string;
+  orderId: string;
+  eventId: string; // ticketId
   quantity: number;
   version: number;
 }
@@ -11,8 +11,19 @@ interface OrderCancelledEvent {
 export class OrderCancelledListener extends BaseListener<OrderCancelledEvent> {
   exchange = "order:cancelled";
   queueName = "tickets-order-cancelled";
-  async onMessage(_data: OrderCancelledEvent) {
-    // no-op zatím (až bude Redis, vrátíme rezervace)
-    console.log("ℹ️ Order cancelled (Tickets noop for now).");
+
+  async onMessage(data: OrderCancelledEvent) {
+    try {
+      await releaseAllForOrder(data.orderId);
+
+      console.log(
+        `🚫 Released Redis reservations for cancelled order ${data.orderId} (ticket ${data.eventId})`
+      );
+    } catch (err) {
+      console.error(
+        `❌ Failed to release reservations for order ${data.orderId}`,
+        err
+      );
+    }
   }
 }

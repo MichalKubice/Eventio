@@ -1,4 +1,13 @@
 import mongoose from "mongoose";
+import { getReservedCount } from "@mkeventio/shared";
+
+export const computeAvailableNow = async (
+  ticket: TicketDoc
+): Promise<number> => {
+  const reserved = await getReservedCount(ticket.id);
+  return Math.max(ticket.totalTickets - ticket.soldTickets - reserved, 0);
+};
+
 
 export interface TicketAttrs {
   title: string;

@@ -16,6 +16,7 @@ import {
 import { OrderCancelledListener } from "./events/listeners/order-cancelled-listener";
 import { OrderCreatedListener } from "./events/listeners/order-created-listener";
 import { OrderCompletedListener } from "./events/listeners/order-completed-listener";
+import { connectRedisWithRetry } from "@mkeventio/shared";
 
 const app = express();
 app.use(json());
@@ -51,6 +52,12 @@ const start = async () => {
     }
     if (!process.env.RABBITMQ_URL)
       throw new Error("RABBITMQ_URL must be defined!");
+
+    if (!process.env.REDIS_URL) {
+      throw new Error("REDIS_URL must be defined");
+    }
+
+    await connectRedisWithRetry(process.env.REDIS_URL);
     await mongoose.connect("mongodb://tickets-mongo-srv:27017/tickets");
 
     console.log("Connected to MongoDb");

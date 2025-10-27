@@ -25,6 +25,12 @@ spec:
                   key: JWT-KEY
             - name: RABBITMQ_URL
               value: 'amqp://guest:guest@rabbitmq:5672'
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: redis-secret
+                  key: REDIS_PASSWORD
+          envFrom: []
 ---
 apiVersion: v1
 kind: Service

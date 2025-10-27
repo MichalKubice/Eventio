@@ -1,10 +1,11 @@
 import { BaseListener } from "@mkeventio/shared";
 import { Ticket } from "../../models/ticket";
 import { TicketUpdatedPublisher } from "../publishers/ticket-updated-publisher";
+import { releaseTickets } from "@mkeventio/shared";
 
 interface OrderCompletedEvent {
-  id: string;
-  eventId: string;   // ticketId
+  orderId: string;
+  eventId: string; // ticketId
   quantity: number;
   version: number;
 }
@@ -14,26 +15,43 @@ export class OrderCompletedListener extends BaseListener<OrderCompletedEvent> {
   queueName = "tickets-order-completed";
 
   async onMessage(data: OrderCompletedEvent) {
-    const ticket = await Ticket.findById(data.eventId);
-    if (!ticket) throw new Error("Ticket not found");
+    try {
+      const ticket = await Ticket.findById(data.eventId);
+      if (!ticket) {
+        console.warn(`⚠️ Ticket not found for completed order ${data.orderId}`);
+        return;
+      }
 
-    ticket.soldTickets += data.quantity;
-    await ticket.save();
+      await releaseTickets(data.orderId, data.eventId, data.quantity);
 
-    await new TicketUpdatedPublisher().publish({
-      id: ticket.id,
-      title: ticket.title,
-      description: ticket.description,
-      price: ticket.price,
-      totalTickets: ticket.totalTickets,
-      soldTickets: ticket.soldTickets,
-      startSaleAt: ticket.startSaleAt.toISOString(),
-      status: ticket.status,
-      version: ticket.version,
-    });
+      ticket.soldTickets += data.quantity;
 
-    console.log(
-      `💰 Sold ${data.quantity} (ticket ${ticket.id}), version=${ticket.version}`
-    );
+      if (ticket.soldTickets > ticket.totalTickets) {
+        console.warn(
+          `⚠️ Oversell detected for ticket ${ticket.id}, correcting`
+        );
+        ticket.soldTickets = ticket.totalTickets;
+      }
+
+      await ticket.save();
+
+      await new TicketUpdatedPublisher().publish({
+        id: ticket.id,
+        title: ticket.title,
+        description: ticket.description,
+        price: ticket.price,
+        totalTickets: ticket.totalTickets,
+        soldTickets: ticket.soldTickets,
+        startSaleAt: ticket.startSaleAt.toISOString(),
+        status: ticket.status,
+        version: ticket.version,
+      });
+
+      console.log(
+        `💰 Finalized sale of ${data.quantity} ticket(s) for ${ticket.id}, new sold=${ticket.soldTickets}`
+      );
+    } catch (err) {
+      console.error("❌ Error processing order:completed", err);
+    }
   }
 }
