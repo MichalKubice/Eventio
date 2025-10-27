@@ -19,6 +19,7 @@ import { TicketUpdatedListener } from "./events/listeners/ticket-updated-listene
 import { OrderAcceptedListener } from "./events/listeners/order-accepted-listener";
 import { OrderRejectedListener } from "./events/listeners/order-rejected-listener";
 import { OrderCompletedListener } from "./events/listeners/order-completed-listener";
+import { OrderExpiredListener } from "./events/listeners/order-expired-listener";
 
 const app = express();
 app.set("trust proxy", true);
@@ -68,6 +69,7 @@ const start = async () => {
     await new OrderAcceptedListener().listen();
     await new OrderRejectedListener().listen();
     await new OrderCompletedListener().listen();
+    await new OrderExpiredListener().listen();
   } catch (err) {
     console.error(err);
   }

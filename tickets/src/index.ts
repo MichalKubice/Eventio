@@ -16,6 +16,7 @@ import {
 import { OrderCancelledListener } from "./events/listeners/order-cancelled-listener";
 import { OrderCreatedListener } from "./events/listeners/order-created-listener";
 import { OrderCompletedListener } from "./events/listeners/order-completed-listener";
+import { listenForReservationExpirations } from "./events/listeners/order-expired-listener";
 import { connectRedisWithRetry } from "@mkeventio/shared";
 
 const app = express();
@@ -69,6 +70,7 @@ const start = async () => {
     await new OrderCreatedListener().listen();
     await new OrderCancelledListener().listen();
     await new OrderCompletedListener().listen();
+    await listenForReservationExpirations();
   } catch (err) {
     console.error(err);
   }
