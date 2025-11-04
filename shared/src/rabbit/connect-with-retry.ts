@@ -8,10 +8,10 @@ const connectRabbitWithRetry = async (
   for (let i = 1; i <= retries; i++) {
     try {
       await rabbitWrapper.connect(url);
-      console.log("✅ Connected to RabbitMQ");
+      console.log("Connected to RabbitMQ");
       return;
     } catch (err) {
-      console.warn(`🐇 RabbitMQ not ready (attempt ${i}/${retries})`);
+      console.warn(`RabbitMQ not ready (attempt ${i}/${retries})`);
       if (i === retries) throw err;
       await new Promise((res) => setTimeout(res, delay));
     }

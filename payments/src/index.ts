@@ -44,14 +44,14 @@ const start = async () => {
     await connectRabbitWithRetry(process.env.RABBITMQ_URL);
     await mongoose.connect(process.env.MONGO_URI);
 
-    console.log("✅ Connected to MongoDB & RabbitMQ");
+    console.log("Connected to MongoDB & RabbitMQ");
 
     await new OrderRejectedListener().listen();
     await new OrderAcceptedListener().listen();
     await new OrderCancelledListener().listen();
 
     app.listen(3000, () => {
-      console.log("💳 Payments service listening on port 3000");
+      console.log("Payments service listening on port 3000");
     });
   } catch (err) {
     console.error(err);

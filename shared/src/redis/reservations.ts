@@ -47,7 +47,7 @@ export const releaseAllForOrder = async (orderId: string) => {
   const items = await cli.hGetAll(keyOrderSnapshot(orderId));
 
   if (!items || Object.keys(items).length === 0) {
-    console.warn(`⚠️ No snapshot found for expired order ${orderId}`);
+    console.warn(`No snapshot found for expired order ${orderId}`);
     return;
   }
 
@@ -63,6 +63,6 @@ export const releaseAllForOrder = async (orderId: string) => {
   multi.del(keyOrderItems(orderId));
   await multi.exec();
 
-  console.log(`🔁 Released reservations for expired order ${orderId}`);
+  console.log(`Released reservations for expired order ${orderId}`);
 };
 

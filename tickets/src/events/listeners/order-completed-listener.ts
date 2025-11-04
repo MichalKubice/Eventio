@@ -18,7 +18,7 @@ export class OrderCompletedListener extends BaseListener<OrderCompletedEvent> {
     try {
       const ticket = await Ticket.findById(data.eventId);
       if (!ticket) {
-        console.warn(`⚠️ Ticket not found for completed order ${data.orderId}`);
+        console.warn(`Ticket not found for completed order ${data.orderId}`);
         return;
       }
 
@@ -28,7 +28,7 @@ export class OrderCompletedListener extends BaseListener<OrderCompletedEvent> {
 
       if (ticket.soldTickets > ticket.totalTickets) {
         console.warn(
-          `⚠️ Oversell detected for ticket ${ticket.id}, correcting`
+          `Oversell detected for ticket ${ticket.id}, correcting`
         );
         ticket.soldTickets = ticket.totalTickets;
       }
@@ -48,10 +48,10 @@ export class OrderCompletedListener extends BaseListener<OrderCompletedEvent> {
       });
 
       console.log(
-        `💰 Finalized sale of ${data.quantity} ticket(s) for ${ticket.id}, new sold=${ticket.soldTickets}`
+        `Finalized sale of ${data.quantity} ticket(s) for ${ticket.id}, new sold=${ticket.soldTickets}`
       );
     } catch (err) {
-      console.error("❌ Error processing order:completed", err);
+      console.error("Error processing order:completed", err);
     }
   }
 }

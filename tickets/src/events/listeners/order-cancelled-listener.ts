@@ -17,11 +17,11 @@ export class OrderCancelledListener extends BaseListener<OrderCancelledEvent> {
       await releaseAllForOrder(data.orderId);
 
       console.log(
-        `🚫 Released Redis reservations for cancelled order ${data.orderId} (ticket ${data.eventId})`
+        `Released Redis reservations for cancelled order ${data.orderId} (ticket ${data.eventId})`
       );
     } catch (err) {
       console.error(
-        `❌ Failed to release reservations for order ${data.orderId}`,
+        `Failed to release reservations for order ${data.orderId}`,
         err
       );
     }

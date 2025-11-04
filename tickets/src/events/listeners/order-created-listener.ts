@@ -28,7 +28,7 @@ export class OrderCreatedListener extends BaseListener<OrderCreatedEvent> {
           orderId: data.orderId,
           reason: "ticket_not_active",
         });
-        console.log(`🚫 Order rejected — ticket not active (${data.orderId})`);
+        console.log(`Order rejected — ticket not active (${data.orderId})`);
         return;
       }
 
@@ -41,7 +41,7 @@ export class OrderCreatedListener extends BaseListener<OrderCreatedEvent> {
           reason: "not_enough_tickets",
         });
         console.log(
-          `❌ Order rejected by Tickets (${data.orderId}) — insufficient tickets`
+          `Order rejected by Tickets (${data.orderId}) — insufficient tickets`
         );
         return;
       }
@@ -67,10 +67,10 @@ export class OrderCreatedListener extends BaseListener<OrderCreatedEvent> {
       });
 
       console.log(
-        `✅ Order accepted and reserved ${data.quantity} tickets (${data.orderId}) — TTL ${expiresInSec}s`
+        `Order accepted and reserved ${data.quantity} tickets (${data.orderId}) — TTL ${expiresInSec}s`
       );
     } catch (err) {
-      console.error("❌ Error in OrderCreatedListener", err);
+      console.error("Error in OrderCreatedListener", err);
     }
   }
 }

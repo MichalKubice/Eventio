@@ -17,7 +17,7 @@ export class OrderAcceptedListener extends BaseListener<OrderAcceptedEvent> {
   async onMessage(data: OrderAcceptedEvent) {
     const existing = await OrderCache.findById(data.orderId);
     if (existing) {
-      console.log(`⚠️ Order already cached: ${data.orderId}`);
+      console.log(`Order already cached: ${data.orderId}`);
       return;
     }
 
@@ -32,6 +32,6 @@ export class OrderAcceptedListener extends BaseListener<OrderAcceptedEvent> {
 
     await order.save();
 
-    console.log(`💰 Cached accepted order ${data.orderId}, ready for payment`);
+    console.log(`Cached accepted order ${data.orderId}, ready for payment`);
   }
 }

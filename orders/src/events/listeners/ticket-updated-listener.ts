@@ -20,14 +20,14 @@ export class TicketUpdatedListener extends BaseListener<TicketUpdatedEvent> {
   async onMessage(data: TicketUpdatedEvent) {
     const t = await TicketCache.findById(data.id);
     if (!t) {
-      console.warn(`⚠️ Ticket not in cache yet: ${data.id}`);
+      console.warn(`Ticket not in cache yet: ${data.id}`);
       return;
     }
 
     // Jednoduchá ochrana proti out-of-order
     if (data.version <= t.version) {
       console.warn(
-        `↩️ Outdated ticket update ignored (have v${t.version}, got v${data.version})`
+        `Outdated ticket update ignored (have v${t.version}, got v${data.version})`
       );
       return;
     }
@@ -44,6 +44,6 @@ export class TicketUpdatedListener extends BaseListener<TicketUpdatedEvent> {
     });
     await t.save();
 
-    console.log(`🔁 Ticket cache updated to v${data.version}: ${data.title}`);
+    console.log(`Ticket cache updated to v${data.version}: ${data.title}`);
   }
 }

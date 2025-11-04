@@ -16,18 +16,18 @@ export class OrderCompletedListener extends BaseListener<OrderCompletedEvent> {
   async onMessage(data: OrderCompletedEvent) {
     const order = await Order.findById(data.id);
     if (!order) {
-      console.warn(`⚠️ Order not found for id: ${data.id}`);
+      console.warn(`Order not found for id: ${data.id}`);
       return;
     }
 
     if (order.status === OrderStatus.Complete) {
-      console.log(`⚠️ Order ${data.id} already marked as complete`);
+      console.log(`Order ${data.id} already marked as complete`);
       return;
     }
 
     order.status = OrderStatus.Complete;
     await order.save();
 
-    console.log(`✅ Order ${order.id} marked as complete (after payment)`);
+    console.log(`Order ${order.id} marked as complete (after payment)`);
   }
 }

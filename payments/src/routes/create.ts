@@ -53,7 +53,7 @@ router.post(
       });
       await payment.save();
 
-      // 🎲 3. Fake gateway simulation
+      // 3. Fake gateway simulation
       const success = Math.random() > 0.1; // 90 % success rate
 
       if (success) {
@@ -70,7 +70,7 @@ router.post(
 
         order.status = OrderStatus.Complete;
         await order.save();
-        console.log(`✅ Payment success for order ${orderId}`);
+        console.log(`Payment success for order ${orderId}`);
         return res.status(201).send(payment);
       } else {
         payment.status = PaymentStatus.Failed;
@@ -81,7 +81,7 @@ router.post(
           reason: "Simulated failure",
         });
 
-        console.log(`❌ Payment failed for order ${orderId}`);
+        console.log(`Payment failed for order ${orderId}`);
         return res.status(400).send(payment);
       }
     } catch (err) {

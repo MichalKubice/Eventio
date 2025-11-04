@@ -8,6 +8,6 @@ export abstract class BasePublisher<T> {
     await channel.assertExchange(this.exchange, "fanout", { durable: false });
     channel.publish(this.exchange, "", Buffer.from(JSON.stringify(data)));
 
-    console.log(`📢 Event published to exchange: ${this.exchange}`);
+    console.log(`Event published to exchange: ${this.exchange}`);
   }
 }

@@ -8,10 +8,10 @@ export const listenForReservationExpirations = async () => {
   await sub.pSubscribe("__keyevent@0__:expired", async (message) => {
     if (!message.startsWith("order:")) return;
     const orderId = message.split(":")[1];
-    console.log(`⏰ Reservation expired for order ${orderId}`);
+    console.log(`Reservation expired for order ${orderId}`);
 
     await releaseAllForOrder(orderId);
     await new OrderExpiredPublisher().publish({ orderId: orderId });
   });
-  console.log("📡 Listening for reservation expirations (Tickets)");
+  console.log("Listening for reservation expirations (Tickets)");
 };

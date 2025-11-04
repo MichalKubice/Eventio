@@ -19,6 +19,6 @@ export class OrderAcceptedListener extends BaseListener<OrderAcceptedEvent> {
     if (!order) throw new Error("Order not found");
     order.status = OrderStatus.AwaitingPayment;
     await order.save();
-    console.log(`✅ Order ${order.id} moved to awaiting:payment`);
+    console.log(`Order ${order.id} moved to awaiting:payment`);
   }
 }

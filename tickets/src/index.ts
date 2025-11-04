@@ -65,7 +65,7 @@ const start = async () => {
 
     await connectRabbitWithRetry(process.env.RABBITMQ_URL);
 
-    console.log("✅ Connected to RabbitMQ");
+    console.log("Connected to RabbitMQ");
 
     await new OrderCreatedListener().listen();
     await new OrderCancelledListener().listen();

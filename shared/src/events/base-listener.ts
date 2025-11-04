@@ -13,7 +13,7 @@ export abstract class BaseListener<T> {
     await channel.bindQueue(q.queue, this.exchange, "");
 
     console.log(
-      `👂 Listening on exchange: ${this.exchange} (queue: ${this.queueName})`
+      `Listening on exchange: ${this.exchange} (queue: ${this.queueName})`
     );
 
     await channel.consume(q.queue, async (msg: any | null) => {
@@ -23,7 +23,7 @@ export abstract class BaseListener<T> {
           await this.onMessage(data);
           channel.ack(msg);
         } catch (err) {
-          console.error(`❌ Listener ${this.queueName} error:`, err);
+          console.error(`Listener ${this.queueName} error:`, err);
         }
       }
     });

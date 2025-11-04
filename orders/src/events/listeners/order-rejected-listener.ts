@@ -16,7 +16,7 @@ export class OrderRejectedListener extends BaseListener<OrderRejectedEvent> {
     order.status = OrderStatus.Cancelled;
     await order.save();
     console.log(
-      `❌ Order ${order.id} cancelled (reason=${data.reason || "n/a"})`
+      `Order ${order.id} cancelled (reason=${data.reason || "n/a"})`
     );
   }
 }

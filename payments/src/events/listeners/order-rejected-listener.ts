@@ -18,7 +18,7 @@ export class OrderRejectedListener extends BaseListener<OrderRejectedEvent> {
         await p.save();
 
         //sending money back
-        console.log(`💸 Auto-refund payment for rejected order ${data.id}`);
+        console.log(`Auto-refund payment for rejected order ${data.id}`);
       }
     }
   }

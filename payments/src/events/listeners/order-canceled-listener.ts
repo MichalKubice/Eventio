@@ -15,16 +15,16 @@ export class OrderCancelledListener extends BaseListener<OrderCancelledEvent> {
       const order = await OrderCache.findById(data.id);
 
       if (!order) {
-        console.warn(`⚠️ Order not found in cache: ${data.id}`);
+        console.warn(`Order not found in cache: ${data.id}`);
         return;
       }
 
       order.status = OrderStatus.Cancelled;
       await order.save();
 
-      console.log(`🚫 Order ${data.id} marked as cancelled in cache`);
+      console.log(`Order ${data.id} marked as cancelled in cache`);
     } catch (err) {
-      console.error("❌ Failed to process order:cancelled", err);
+      console.error("Failed to process order:cancelled", err);
     }
   }
 }

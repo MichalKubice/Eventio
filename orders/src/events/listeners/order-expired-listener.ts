@@ -14,12 +14,12 @@ export class OrderExpiredListener extends BaseListener<OrderExpiredEvent> {
     const order = await Order.findById(data.orderId);
 
     if (!order) {
-      console.warn(`⚠️ Order not found for expired ID ${data.orderId}`);
+      console.warn(`Order not found for expired ID ${data.orderId}`);
       return;
     }
 
     if (order.status === OrderStatus.Complete) {
-      console.log(`✅ Order ${order.id} already completed – ignoring expiry`);
+      console.log(`Order ${order.id} already completed – ignoring expiry`);
       return;
     }
 
@@ -34,6 +34,6 @@ export class OrderExpiredListener extends BaseListener<OrderExpiredEvent> {
     //   version: order.version,
     // });
 
-    console.log(`⏰ Order ${order.id} expired and marked as cancelled`);
+    console.log(`Order ${order.id} expired and marked as cancelled`);
   }
 }

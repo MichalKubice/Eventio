@@ -21,13 +21,13 @@ class RedisWrapper {
     });
 
     await this._client.connect();
-    console.log("✅ Connected to Redis");
+    console.log("Connected to Redis");
   }
 
   async disconnect() {
     if (this._client) {
       await this._client.quit();
-      console.log("⬇️ Disconnected Redis");
+      console.log("Disconnected Redis");
     }
   }
 }
