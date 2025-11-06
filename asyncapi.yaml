@@ -1,0 +1,616 @@
+asyncapi: 3.0.0
+info:
+  title: Eventio Ticketing System API
+  version: 1.0.0
+  description: |
+    Asynchronní API pro systém prodeje vstupenek Eventio.
+    Systém se skládá ze tří hlavních služeb: Tickets, Orders a Payments.
+    Komunikace mezi službami probíhá přes RabbitMQ s fanout exchanges.
+    Redis se používá pro správu rezervací a expirace objednávek.
+
+servers:
+  rabbitmq:
+    host: rabbitmq:5672
+    protocol: amqp
+    description: RabbitMQ message broker pro event-driven komunikaci mezi službami
+  redis:
+    host: redis:6379
+    protocol: redis
+    description: Redis pro správu rezervací a key expiration events
+
+channels:
+  ticket.created:
+    address: ticket:created
+    messages:
+      ticketCreated:
+        $ref: '#/components/messages/TicketCreated'
+    description: Exchange pro nově vytvořené vstupenky
+
+  ticket.updated:
+    address: ticket:updated
+    messages:
+      ticketUpdated:
+        $ref: '#/components/messages/TicketUpdated'
+    description: Exchange pro aktualizace vstupenek
+
+  order.created:
+    address: order:created
+    messages:
+      orderCreated:
+        $ref: '#/components/messages/OrderCreated'
+    description: Exchange pro nově vytvořené objednávky
+
+  order.accepted:
+    address: order:accepted
+    messages:
+      orderAccepted:
+        $ref: '#/components/messages/OrderAccepted'
+    description: Exchange pro přijaté objednávky po validaci
+
+  order.rejected:
+    address: order:rejected
+    messages:
+      orderRejected:
+        $ref: '#/components/messages/OrderRejected'
+    description: Exchange pro zamítnuté objednávky
+
+  order.expired:
+    address: order:expired
+    messages:
+      orderExpired:
+        $ref: '#/components/messages/OrderExpired'
+    description: Exchange pro expirované objednávky (triggered z Redis)
+
+  order.cancelled:
+    address: order:cancelled
+    messages:
+      orderCancelled:
+        $ref: '#/components/messages/OrderCancelled'
+    description: Exchange pro zrušené objednávky
+
+  order.completed:
+    address: order:completed
+    messages:
+      orderCompleted:
+        $ref: '#/components/messages/OrderCompleted'
+    description: Exchange pro dokončené objednávky po úspěšné platbě
+
+  payment.failed:
+    address: payment:failed
+    messages:
+      paymentFailed:
+        $ref: '#/components/messages/PaymentFailed'
+    description: Exchange pro neúspěšné platby
+
+  redis.keyExpiration:
+    address: '__keyevent@0__:expired'
+    messages:
+      keyExpired:
+        $ref: '#/components/messages/RedisKeyExpired'
+    description: Redis pub/sub channel pro expiraci klíčů
+
+operations:
+  # TICKETS SERVICE OPERATIONS
+  publishTicketCreated:
+    action: send
+    channel:
+      $ref: '#/channels/ticket.created'
+    summary: Publikuje událost vytvoření nové vstupenky
+    description: Tickets service publikuje tuto událost při vytvoření nové vstupenky
+    messages:
+      - $ref: '#/channels/ticket.created/messages/ticketCreated'
+
+  subscribeTicketCreated:
+    action: receive
+    channel:
+      $ref: '#/channels/ticket.created'
+    summary: Naslouchá událostem vytvoření vstupenek
+    description: Orders service naslouchá pro cachování informací o vstupenkách
+    messages:
+      - $ref: '#/channels/ticket.created/messages/ticketCreated'
+
+  publishTicketUpdated:
+    action: send
+    channel:
+      $ref: '#/channels/ticket.updated'
+    summary: Publikuje událost aktualizace vstupenky
+    description: Tickets service publikuje při změně vstupenky (cena, status, počet prodaných)
+    messages:
+      - $ref: '#/channels/ticket.updated/messages/ticketUpdated'
+
+  subscribeTicketUpdated:
+    action: receive
+    channel:
+      $ref: '#/channels/ticket.updated'
+    summary: Naslouchá aktualizacím vstupenek
+    description: Orders service naslouchá pro aktualizaci cachovaných dat
+    messages:
+      - $ref: '#/channels/ticket.updated/messages/ticketUpdated'
+
+  subscribeOrderCreated:
+    action: receive
+    channel:
+      $ref: '#/channels/order.created'
+    summary: Naslouchá novým objednávkám
+    description: Tickets service validuje dostupnost vstupenek a rezervuje je v Redis
+    messages:
+      - $ref: '#/channels/order.created/messages/orderCreated'
+
+  publishOrderAccepted:
+    action: send
+    channel:
+      $ref: '#/channels/order.accepted'
+    summary: Publikuje přijetí objednávky
+    description: Tickets service publikuje po úspěšné validaci a rezervaci vstupenek
+    messages:
+      - $ref: '#/channels/order.accepted/messages/orderAccepted'
+
+  subscribeOrderAcceptedInOrders:
+    action: receive
+    channel:
+      $ref: '#/channels/order.accepted'
+    summary: Naslouchá přijetí objednávky
+    description: Orders service aktualizuje stav objednávky na AwaitingPayment
+    messages:
+      - $ref: '#/channels/order.accepted/messages/orderAccepted'
+
+  subscribeOrderAcceptedInPayments:
+    action: receive
+    channel:
+      $ref: '#/channels/order.accepted'
+    summary: Naslouchá přijetí objednávky
+    description: Payments service cachuje informace o objednávce
+    messages:
+      - $ref: '#/channels/order.accepted/messages/orderAccepted'
+
+  publishOrderRejected:
+    action: send
+    channel:
+      $ref: '#/channels/order.rejected'
+    summary: Publikuje zamítnutí objednávky
+    description: Tickets service publikuje pokud není dostatek vstupenek
+    messages:
+      - $ref: '#/channels/order.rejected/messages/orderRejected'
+
+  subscribeOrderRejectedInOrders:
+    action: receive
+    channel:
+      $ref: '#/channels/order.rejected'
+    summary: Naslouchá zamítnutí objednávky
+    description: Orders service aktualizuje stav na Cancelled
+    messages:
+      - $ref: '#/channels/order.rejected/messages/orderRejected'
+
+  subscribeOrderRejectedInPayments:
+    action: receive
+    channel:
+      $ref: '#/channels/order.rejected'
+    summary: Naslouchá zamítnutí objednávky
+    description: Payments service automaticky refunduje případné platby
+    messages:
+      - $ref: '#/channels/order.rejected/messages/orderRejected'
+
+  publishOrderExpired:
+    action: send
+    channel:
+      $ref: '#/channels/order.expired'
+    summary: Publikuje expiraci objednávky
+    description: Tickets service publikuje při Redis key expiration
+    messages:
+      - $ref: '#/channels/order.expired/messages/orderExpired'
+
+  subscribeOrderExpired:
+    action: receive
+    channel:
+      $ref: '#/channels/order.expired'
+    summary: Naslouchá expiraci objednávek
+    description: Orders service aktualizuje stav na Cancelled pokud není Complete
+    messages:
+      - $ref: '#/channels/order.expired/messages/orderExpired'
+
+  subscribeRedisKeyExpiration:
+    action: receive
+    channel:
+      $ref: '#/channels/redis.keyExpiration'
+    summary: Naslouchá Redis key expiration events
+    description: Tickets service detekuje expiraci order:* klíčů a uvolňuje rezervace
+    messages:
+      - $ref: '#/channels/redis.keyExpiration/messages/keyExpired'
+
+  subscribeOrderCancelledInTickets:
+    action: receive
+    channel:
+      $ref: '#/channels/order.cancelled'
+    summary: Naslouchá zrušení objednávek
+    description: Tickets service uvolňuje rezervované vstupenky
+    messages:
+      - $ref: '#/channels/order.cancelled/messages/orderCancelled'
+
+  subscribeOrderCancelledInPayments:
+    action: receive
+    channel:
+      $ref: '#/channels/order.cancelled'
+    summary: Naslouchá zrušení objednávek
+    description: Payments service aktualizuje stav cachované objednávky
+    messages:
+      - $ref: '#/channels/order.cancelled/messages/orderCancelled'
+
+  subscribeOrderCompletedInTickets:
+    action: receive
+    channel:
+      $ref: '#/channels/order.completed'
+    summary: Naslouchá dokončení objednávek
+    description: Tickets service finalizuje prodej a inkrementuje soldTickets
+    messages:
+      - $ref: '#/channels/order.completed/messages/orderCompleted'
+
+  subscribeOrderCompletedInOrders:
+    action: receive
+    channel:
+      $ref: '#/channels/order.completed'
+    summary: Naslouchá dokončení objednávek
+    description: Orders service aktualizuje stav na Complete
+    messages:
+      - $ref: '#/channels/order.completed/messages/orderCompleted'
+
+  # ORDERS SERVICE OPERATIONS
+  publishOrderCreated:
+    action: send
+    channel:
+      $ref: '#/channels/order.created'
+    summary: Publikuje vytvoření nové objednávky
+    description: Orders service publikuje při vytvoření objednávky uživatelem
+    messages:
+      - $ref: '#/channels/order.created/messages/orderCreated'
+
+  publishOrderCancelled:
+    action: send
+    channel:
+      $ref: '#/channels/order.cancelled'
+    summary: Publikuje zrušení objednávky
+    description: Orders service publikuje při manuálním zrušení objednávky
+    messages:
+      - $ref: '#/channels/order.cancelled/messages/orderCancelled'
+
+  # PAYMENTS SERVICE OPERATIONS
+  publishOrderCompleted:
+    action: send
+    channel:
+      $ref: '#/channels/order.completed'
+    summary: Publikuje dokončení objednávky
+    description: Payments service publikuje po úspěšné platbě
+    messages:
+      - $ref: '#/channels/order.completed/messages/orderCompleted'
+
+  publishPaymentFailed:
+    action: send
+    channel:
+      $ref: '#/channels/payment.failed'
+    summary: Publikuje neúspěšnou platbu
+    description: Payments service publikuje při selhání platby
+    messages:
+      - $ref: '#/channels/payment.failed/messages/paymentFailed'
+
+components:
+  messages:
+    TicketCreated:
+      name: TicketCreated
+      title: Vstupenka vytvořena
+      summary: Událost vytvoření nové vstupenky
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/TicketCreatedPayload'
+
+    TicketUpdated:
+      name: TicketUpdated
+      title: Vstupenka aktualizována
+      summary: Událost aktualizace vstupenky
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/TicketUpdatedPayload'
+
+    OrderCreated:
+      name: OrderCreated
+      title: Objednávka vytvořena
+      summary: Událost vytvoření nové objednávky
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/OrderCreatedPayload'
+
+    OrderAccepted:
+      name: OrderAccepted
+      title: Objednávka přijata
+      summary: Objednávka prošla validací a vstupenky jsou rezervovány
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/OrderAcceptedPayload'
+
+    OrderRejected:
+      name: OrderRejected
+      title: Objednávka zamítnuta
+      summary: Objednávka byla zamítnuta (nedostatek vstupenek)
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/OrderRejectedPayload'
+
+    OrderExpired:
+      name: OrderExpired
+      title: Objednávka expirovala
+      summary: Objednávka vypršela (timeout z Redis)
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/OrderExpiredPayload'
+
+    OrderCancelled:
+      name: OrderCancelled
+      title: Objednávka zrušena
+      summary: Objednávka byla manuálně zrušena
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/OrderCancelledPayload'
+
+    OrderCompleted:
+      name: OrderCompleted
+      title: Objednávka dokončena
+      summary: Objednávka byla úspěšně zaplacena a dokončena
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/OrderCompletedPayload'
+
+    PaymentFailed:
+      name: PaymentFailed
+      title: Platba selhala
+      summary: Platba za objednávku selhala
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/PaymentFailedPayload'
+
+    RedisKeyExpired:
+      name: RedisKeyExpired
+      title: Redis klíč expiroval
+      summary: Redis pub/sub událost expirace klíče
+      contentType: text/plain
+      payload:
+        type: string
+        description: Název expirovaného klíče (např. "order:12345")
+
+  schemas:
+    TicketCreatedPayload:
+      type: object
+      required:
+        - id
+        - title
+        - price
+        - totalTickets
+        - soldTickets
+        - startSaleAt
+        - status
+        - version
+      properties:
+        id:
+          type: string
+          description: UUID vstupenky
+        title:
+          type: string
+          description: Název události
+        description:
+          type: string
+          description: Popis události (volitelné)
+        price:
+          type: number
+          format: float
+          description: Cena za jednu vstupenku
+        totalTickets:
+          type: integer
+          description: Celkový počet dostupných vstupenek
+        soldTickets:
+          type: integer
+          description: Počet prodaných vstupenek
+        startSaleAt:
+          type: string
+          format: date-time
+          description: Datum a čas zahájení prodeje
+        status:
+          type: string
+          enum: [scheduled, active, ended]
+          description: Status prodeje vstupenek
+        version:
+          type: integer
+          description: Optimistic concurrency control verze
+
+    TicketUpdatedPayload:
+      type: object
+      required:
+        - id
+        - title
+        - price
+        - totalTickets
+        - soldTickets
+        - startSaleAt
+        - status
+        - version
+      properties:
+        id:
+          type: string
+          description: UUID vstupenky
+        title:
+          type: string
+          description: Název události
+        description:
+          type: string
+          description: Popis události (volitelné)
+        price:
+          type: number
+          format: float
+          description: Cena za jednu vstupenku
+        totalTickets:
+          type: integer
+          description: Celkový počet dostupných vstupenek
+        soldTickets:
+          type: integer
+          description: Počet prodaných vstupenek
+        startSaleAt:
+          type: string
+          format: date-time
+          description: Datum a čas zahájení prodeje
+        status:
+          type: string
+          enum: [scheduled, active, ended]
+          description: Status prodeje vstupenek
+        version:
+          type: integer
+          description: Optimistic concurrency control verze
+
+    OrderCreatedPayload:
+      type: object
+      required:
+        - orderId
+        - userId
+        - eventId
+        - quantity
+        - status
+        - expiresAt
+        - pricePerTicket
+        - version
+      properties:
+        orderId:
+          type: string
+          description: UUID objednávky
+        userId:
+          type: string
+          description: ID uživatele
+        eventId:
+          type: string
+          description: ID vstupenky/události
+        quantity:
+          type: integer
+          description: Počet objednaných vstupenek
+        status:
+          type: string
+          enum: [pending:validation]
+          description: Status objednávky
+        expiresAt:
+          type: string
+          format: date-time
+          description: Čas expirace objednávky
+        pricePerTicket:
+          type: number
+          format: float
+          description: Cena za jednu vstupenku
+        version:
+          type: integer
+          description: Optimistic concurrency control verze
+
+    OrderAcceptedPayload:
+      type: object
+      required:
+        - orderId
+        - userId
+        - eventId
+        - quantity
+        - pricePerTicket
+        - version
+      properties:
+        orderId:
+          type: string
+          description: UUID objednávky
+        userId:
+          type: string
+          description: ID uživatele
+        eventId:
+          type: string
+          description: ID vstupenky/události
+        quantity:
+          type: integer
+          description: Počet objednaných vstupenek
+        pricePerTicket:
+          type: number
+          format: float
+          description: Cena za jednu vstupenku
+        version:
+          type: integer
+          description: Optimistic concurrency control verze
+
+    OrderRejectedPayload:
+      type: object
+      required:
+        - orderId
+      properties:
+        orderId:
+          type: string
+          description: UUID objednávky
+        reason:
+          type: string
+          description: Důvod zamítnutí (např. "Not enough tickets available")
+
+    OrderExpiredPayload:
+      type: object
+      required:
+        - orderId
+      properties:
+        orderId:
+          type: string
+          description: UUID objednávky
+
+    OrderCancelledPayload:
+      type: object
+      required:
+        - id
+        - userId
+        - eventId
+        - quantity
+        - version
+      properties:
+        id:
+          type: string
+          description: UUID objednávky
+        userId:
+          type: string
+          description: ID uživatele
+        eventId:
+          type: string
+          description: ID vstupenky/události
+        quantity:
+          type: integer
+          description: Počet zrušených vstupenek
+        version:
+          type: integer
+          description: Optimistic concurrency control verze
+
+    OrderCompletedPayload:
+      type: object
+      required:
+        - id
+        - eventId
+        - userId
+        - paymentId
+        - quantity
+      properties:
+        id:
+          type: string
+          description: UUID objednávky
+        eventId:
+          type: string
+          description: ID vstupenky/události
+        userId:
+          type: string
+          description: ID uživatele
+        paymentId:
+          type: string
+          description: ID platby ze Stripe
+        quantity:
+          type: integer
+          description: Počet zakoupených vstupenek
+
+    PaymentFailedPayload:
+      type: object
+      required:
+        - orderId
+        - reason
+      properties:
+        orderId:
+          type: string
+          description: UUID objednávky
+        reason:
+          type: string
+          description: Důvod selhání platby
