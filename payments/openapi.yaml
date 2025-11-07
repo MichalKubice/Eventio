@@ -1,0 +1,153 @@
+openapi: 3.0.3
+info:
+  title: Eventio Payments Service API
+  description: Payment processing service for Eventio platform
+  version: 1.0.0
+  contact:
+    name: Eventio Team
+
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+
+tags:
+  - name: Payments
+    description: Payment processing endpoints
+
+paths:
+  /api/payments:
+    post:
+      tags:
+        - Payments
+      summary: Create a payment
+      description: Processes payment for an order. Simulated payment gateway with 90% success rate. Supports idempotency keys to prevent duplicate payments.
+      operationId: createPayment
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - orderId
+              properties:
+                orderId:
+                  type: string
+                  description: ID of the order to pay for
+                  example: 620137287748018793f
+                idempotencyKey:
+                  type: string
+                  description: Optional key to prevent duplicate payments
+                  example: payment-620137287748018793f-1699372800
+      responses:
+        '201':
+          description: Payment processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+        '400':
+          description: Invalid input or order cannot be paid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                orderNotAccepted:
+                  summary: Order not in accepted state
+                  value:
+                    errors:
+                      - message: Order is not in accepted state
+                duplicatePayment:
+                  summary: Duplicate payment attempt
+                  value:
+                    errors:
+                      - message: Payment with this idempotency key already exists
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Not authorized to pay for this order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Payment processing failed (simulated gateway failure)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: session
+
+  schemas:
+    Payment:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 620137287748018793f
+        orderId:
+          type: string
+          example: 620137287748018793f
+        userId:
+          type: string
+          example: 620137287748018793f
+        amount:
+          type: number
+          format: float
+          description: Payment amount
+          example: 199.98
+        currency:
+          type: string
+          description: Payment currency
+          example: USD
+          default: USD
+        status:
+          type: string
+          enum:
+            - pending
+            - completed
+            - failed
+          example: completed
+        idempotencyKey:
+          type: string
+          description: Unique key to prevent duplicate payments
+          example: payment-620137287748018793f-1699372800
+        createdAt:
+          type: string
+          format: date-time
+          example: 2025-11-07T14:00:00Z
+        version:
+          type: integer
+          example: 0
+
+    Error:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              message:
+                type: string
+              field:
+                type: string

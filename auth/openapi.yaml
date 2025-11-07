@@ -1,0 +1,191 @@
+openapi: 3.0.3
+info:
+  title: Eventio Auth Service API
+  description: Authentication and user management service for Eventio platform
+  version: 1.0.0
+  contact:
+    name: Eventio Team
+
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+
+tags:
+  - name: Authentication
+    description: User authentication endpoints
+
+paths:
+  /api/users/signup:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      description: Creates a new user account with email and password
+      operationId: signup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  format: password
+                  minLength: 4
+                  maxLength: 20
+                  example: password123
+      responses:
+        '201':
+          description: User created successfully
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: session=eyJqd3QiOiJleUpoYkdjaU9pSklVekkxTmlJc0luUjVjQ0k2SWtwWFZDSjkuZXlKcFpDSTZJall5TURFek56STROemMzTkRnd01UZzNPVE0wWmlJc0ltVnRZV2xzSWpvaWRHVnpkRUIwWlhOMExtTnZiU0lzSW1saGRDSTZNVGN6TVRBd01UVTJNWDA...; Path=/; HttpOnly
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid input or email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/users/signin:
+    post:
+      tags:
+        - Authentication
+      summary: Sign in user
+      description: Authenticates user and returns session cookie
+      operationId: signin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  format: password
+                  example: password123
+      responses:
+        '200':
+          description: Successfully authenticated
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/users/signout:
+    post:
+      tags:
+        - Authentication
+      summary: Sign out user
+      description: Clears the session cookie
+      operationId: signout
+      responses:
+        '200':
+          description: Successfully signed out
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Signed out successfully
+
+  /api/users/currentuser:
+    get:
+      tags:
+        - Authentication
+      summary: Get current user
+      description: Returns the currently authenticated user information
+      operationId: currentUser
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Current user information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  currentUser:
+                    oneOf:
+                      - $ref: '#/components/schemas/UserPayload'
+                      - type: 'null'
+        '401':
+          description: Not authenticated
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: session
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 620137287748018793f
+        email:
+          type: string
+          format: email
+          example: user@example.com
+
+    UserPayload:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 620137287748018793f
+        email:
+          type: string
+          format: email
+          example: user@example.com
+
+    Error:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              message:
+                type: string
+              field:
+                type: string

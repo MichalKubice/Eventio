@@ -1,0 +1,294 @@
+openapi: 3.0.3
+info:
+  title: Eventio Tickets Service API
+  description: Ticket management and event creation service for Eventio platform
+  version: 1.0.0
+  contact:
+    name: Eventio Team
+
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+
+tags:
+  - name: Tickets
+    description: Ticket and event management endpoints
+
+paths:
+  /api/tickets:
+    post:
+      tags:
+        - Tickets
+      summary: Create a new ticket/event
+      description: Creates a new event with tickets for sale
+      operationId: createTicket
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - price
+                - totalTickets
+                - startSaleAt
+              properties:
+                title:
+                  type: string
+                  example: Summer Music Festival 2025
+                description:
+                  type: string
+                  example: Annual summer festival with top artists
+                price:
+                  type: number
+                  format: float
+                  minimum: 0
+                  example: 99.99
+                totalTickets:
+                  type: integer
+                  minimum: 1
+                  example: 1000
+                startSaleAt:
+                  type: string
+                  format: date-time
+                  example: 2025-06-01T10:00:00Z
+      responses:
+        '201':
+          description: Ticket created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ticket'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    get:
+      tags:
+        - Tickets
+      summary: List all tickets
+      description: Retrieves a list of all available tickets/events
+      operationId: listTickets
+      responses:
+        '200':
+          description: List of tickets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Ticket'
+
+  /api/tickets/{id}:
+    get:
+      tags:
+        - Tickets
+      summary: Get ticket details
+      description: Retrieves details of a specific ticket/event
+      operationId: getTicket
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Ticket ID
+      responses:
+        '200':
+          description: Ticket details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ticket'
+        '404':
+          description: Ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags:
+        - Tickets
+      summary: Update ticket
+      description: Updates ticket information (only by ticket owner)
+      operationId: updateTicket
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Ticket ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: Updated Festival Name
+                description:
+                  type: string
+                  example: Updated description
+                price:
+                  type: number
+                  format: float
+                  minimum: 0
+                  example: 89.99
+      responses:
+        '200':
+          description: Ticket updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ticket'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Not authorized to update this ticket
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/tickets/{id}/start-sale:
+    put:
+      tags:
+        - Tickets
+      summary: Start ticket sale
+      description: Activates ticket sales (changes status from scheduled to active)
+      operationId: startTicketSale
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Ticket ID
+      responses:
+        '200':
+          description: Ticket sale started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ticket'
+        '400':
+          description: Invalid state or operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: session
+
+  schemas:
+    Ticket:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 620137287748018793f
+        title:
+          type: string
+          example: Summer Music Festival 2025
+        description:
+          type: string
+          example: Annual summer festival with top artists
+        price:
+          type: number
+          format: float
+          example: 99.99
+        totalTickets:
+          type: integer
+          example: 1000
+        soldTickets:
+          type: integer
+          example: 245
+        userId:
+          type: string
+          example: 620137287748018793f
+        startSaleAt:
+          type: string
+          format: date-time
+          example: 2025-06-01T10:00:00Z
+        status:
+          type: string
+          enum:
+            - scheduled
+            - active
+            - ended
+          example: active
+        version:
+          type: integer
+          example: 0
+
+    Error:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              message:
+                type: string
+              field:
+                type: string
