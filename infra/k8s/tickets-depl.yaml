@@ -15,6 +15,7 @@ spec:
       containers:
         - name: tickets
           image: eventio/tickets
+          imagePullPolicy: Never
           env:
             - name: MONGO_URI
               value: 'mongodb://tickets-mongo-srv:27017/tickets'

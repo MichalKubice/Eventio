@@ -15,6 +15,7 @@ spec:
       containers:
         - name: orders
           image: eventio/orders
+          imagePullPolicy: Never
           env:
             - name: MONGO_URI
               value: 'mongodb://orders-mongo-srv:27017/orders'

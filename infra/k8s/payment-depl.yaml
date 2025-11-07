@@ -14,7 +14,8 @@ spec:
     spec:
       containers:
         - name: payment
-          image: eventio/payment
+          image: eventio/payments
+          imagePullPolicy: Never
           env:
             - name: MONGO_URI
               value: 'mongodb://payment-mongo-srv:27017/payment'

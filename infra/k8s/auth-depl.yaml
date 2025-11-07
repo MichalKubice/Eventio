@@ -15,6 +15,7 @@ spec:
       containers:
         - name: auth
           image: eventio/auth
+          imagePullPolicy: Never
           env:
             - name: JWT_KEY
               valueFrom:
