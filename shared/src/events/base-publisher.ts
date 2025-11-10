@@ -5,8 +5,13 @@ export abstract class BasePublisher<T> {
 
   async publish(data: T) {
     const channel = rabbitWrapper.channel;
-    await channel.assertExchange(this.exchange, "fanout", { durable: false });
-    channel.publish(this.exchange, "", Buffer.from(JSON.stringify(data)));
+    await channel.assertExchange(this.exchange, "fanout", { durable: true });
+    channel.publish(
+      this.exchange,
+      "",
+      Buffer.from(JSON.stringify(data)),
+      { persistent: true }
+    );
 
     console.log(`Event published to exchange: ${this.exchange}`);
   }
