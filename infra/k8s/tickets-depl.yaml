@@ -22,14 +22,14 @@ spec:
             - name: JWT_KEY
               valueFrom:
                 secretKeyRef:
-                  name: jwt-secret
+                  name: secret-values
                   key: JWT-KEY
             - name: RABBITMQ_URL
               value: 'amqp://guest:guest@rabbitmq:5672'
             - name: REDIS_URL
               valueFrom:
                 secretKeyRef:
-                  name: redis-secret
+                  name: secret-values
                   key: REDIS_PASSWORD
           envFrom: []
 ---

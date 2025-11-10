@@ -11,7 +11,6 @@ import {
   createOrderRouter,
   indexOrderRouter,
   showOrderRouter,
-  createOrderSyncRouter,
 } from "./routes/index";
 
 import { currentUser, connectRabbitWithRetry } from "@mkeventio/shared";
@@ -38,7 +37,6 @@ app.use(currentUser);
 app.use(json());
 
 app.use(createOrderRouter);
-app.use(createOrderSyncRouter);
 app.use(indexOrderRouter);
 app.use(showOrderRouter);
 app.use(deleteOrderRouter);

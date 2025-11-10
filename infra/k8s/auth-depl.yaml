@@ -20,7 +20,7 @@ spec:
             - name: JWT_KEY
               valueFrom:
                 secretKeyRef:
-                  name: jwt-secret
+                  name: secret-values
                   key: JWT-KEY
             - name: MONGO_URI
               value: mongodb://auth-mongo-srv:27017/auth

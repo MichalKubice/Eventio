@@ -30,7 +30,7 @@ spec:
             - name: REDIS_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: redis-secret
+                  name: secret-values
                   key: REDIS_PASSWORD
           readinessProbe:
             tcpSocket:

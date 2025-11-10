@@ -11,7 +11,6 @@ import {
   showTicketRouter,
   startSaleRouter,
   updateTicketRouter,
-  validateOrderRouter,
 } from "./routes/index";
 
 import { OrderCancelledListener } from "./events/listeners/order-cancelled-listener";
@@ -37,7 +36,6 @@ app.use(indexTicketRouter);
 app.use(showTicketRouter);
 app.use(updateTicketRouter);
 app.use(startSaleRouter);
-app.use(validateOrderRouter);
 
 app.use(errorHandler);
 
@@ -63,7 +61,7 @@ const start = async () => {
     await connectRedisWithRetry(process.env.REDIS_URL);
     await mongoose.connect("mongodb://tickets-mongo-srv:27017/tickets");
 
-    console.log("Connected to MongoDb");
+    console.log("Connected to MongoDbs");
 
     await connectRabbitWithRetry(process.env.RABBITMQ_URL);
 

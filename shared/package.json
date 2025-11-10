@@ -1,5 +1,6 @@
 {
   "name": "@mkeventio/shared",
+  "author": "Michal Kubice",
   "version": "1.0.16",
   "description": "",
   "main": "./build/index.js",
@@ -8,13 +9,9 @@
     "build/**/*"
   ],
   "scripts": {
-    "clean": "del ./build/*",
     "build": "npm run clean && tsc",
-    "pub": "git add . && git commit -m \"Updates\" && npm version patch && npm run build && npm publish"
+    "publish": "git add . && git commit -m \"feat:update-shared\" && npm version patch && npm run build && npm publish"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "devDependencies": {
     "del-cli": "^5.1.0",
     "typescript": "^5.6.2"
