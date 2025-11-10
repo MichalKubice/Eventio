@@ -65,7 +65,7 @@ const start = async () => {
       throw new Error("RABBITMQ_URL must be defineds");
     }
 
-    await connectRabbitWithRetry(process.env.RABBITMQ_URL);
+    await connectRabbitWithRetry(process.env.RABBITMQ_URL, 10, 3000, 5);
     await mongoose.connect("mongodb://orders-mongo-srv:27017/orders");
     console.log("Connected to MongoDb");
 
@@ -76,12 +76,12 @@ const start = async () => {
     await new OrderCompletedListener().listen();
     await new OrderExpiredListener().listen();
 
-
     outboxWorker = new OutboxWorker({
       intervalMs: 2000,
       batchSize: 1000,
       maxRetries: 3,
     });
+
     outboxWorker.start();
 
     setInterval(async () => {
