@@ -14,7 +14,7 @@ export class OutboxWorker {
     maxRetries?: number;
   }) {
     this.intervalMs = options?.intervalMs || 2000;
-    this.batchSize = options?.batchSize || 10;
+    this.batchSize = options?.batchSize || 1000;
     this.maxRetries = options?.maxRetries || 3;
   }
 

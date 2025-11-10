@@ -11,6 +11,7 @@ import {
   createOrderRouter,
   indexOrderRouter,
   showOrderRouter,
+  createOrderSyncRouter,
 } from "./routes/index";
 
 import { currentUser, connectRabbitWithRetry } from "@mkeventio/shared";
@@ -37,6 +38,7 @@ app.use(currentUser);
 app.use(json());
 
 app.use(createOrderRouter);
+app.use(createOrderSyncRouter);
 app.use(indexOrderRouter);
 app.use(showOrderRouter);
 app.use(deleteOrderRouter);
@@ -74,15 +76,14 @@ const start = async () => {
     await new OrderCompletedListener().listen();
     await new OrderExpiredListener().listen();
 
-    // OUTBOX WORKER: Spuštění workera pro zpracování outbox eventů
+
     outboxWorker = new OutboxWorker({
       intervalMs: 2000,
-      batchSize: 10,
+      batchSize: 1000,
       maxRetries: 3,
     });
     outboxWorker.start();
 
-    // Logování statistik každých 30 sekund
     setInterval(async () => {
       const stats = await outboxWorker.getStats();
       console.log("[OUTBOX STATS]", stats);

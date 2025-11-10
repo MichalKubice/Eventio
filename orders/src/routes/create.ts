@@ -26,6 +26,8 @@ router.post(
   ],
   validateRequest,
   async (req: Request, res: Response, next: NextFunction) => {
+    const startTime = Date.now();
+
     try {
       const { ticketId, quantity } = req.body;
 
@@ -66,11 +68,17 @@ router.post(
       });
       await outboxEvent.save();
 
+      const duration = Date.now() - startTime;
+
       console.log(
-        `[OUTBOX] Event stored: ${outboxEvent.id} for order ${order.id}`
+        `[OUTBOX] Event stored: ${outboxEvent.id} for order ${order.id} (${duration}ms) - ASYNCHRONOUS`
       );
 
-      res.status(201).send(order);
+      res.status(201).json({
+        ...order.toJSON(),
+        communicationType: "ASYNCHRONOUS",
+        duration: `${duration}ms`,
+      });
     } catch (err) {
       next(err);
     }

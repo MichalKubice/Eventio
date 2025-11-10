@@ -11,6 +11,7 @@ import {
   showTicketRouter,
   startSaleRouter,
   updateTicketRouter,
+  validateOrderRouter,
 } from "./routes/index";
 
 import { OrderCancelledListener } from "./events/listeners/order-cancelled-listener";
@@ -36,6 +37,7 @@ app.use(indexTicketRouter);
 app.use(showTicketRouter);
 app.use(updateTicketRouter);
 app.use(startSaleRouter);
+app.use(validateOrderRouter);
 
 app.use(errorHandler);
 
