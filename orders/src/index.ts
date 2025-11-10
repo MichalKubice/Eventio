@@ -20,6 +20,7 @@ import { OrderAcceptedListener } from "./events/listeners/order-accepted-listene
 import { OrderRejectedListener } from "./events/listeners/order-rejected-listener";
 import { OrderCompletedListener } from "./events/listeners/order-completed-listener";
 import { OrderExpiredListener } from "./events/listeners/order-expired-listener";
+import { OutboxWorker } from "./workers/outbox-worker";
 
 const app = express();
 app.set("trust proxy", true);
@@ -46,6 +47,8 @@ app.all("*", (req, res, next) => {
   next(new NotFoundError());
 });
 
+let outboxWorker: OutboxWorker;
+
 const start = async () => {
   try {
     if (!process.env.JWT_KEY) {
@@ -70,10 +73,41 @@ const start = async () => {
     await new OrderRejectedListener().listen();
     await new OrderCompletedListener().listen();
     await new OrderExpiredListener().listen();
+
+    // OUTBOX WORKER: Spuštění workera pro zpracování outbox eventů
+    outboxWorker = new OutboxWorker({
+      intervalMs: 2000,
+      batchSize: 10,
+      maxRetries: 3,
+    });
+    outboxWorker.start();
+
+    // Logování statistik každých 30 sekund
+    setInterval(async () => {
+      const stats = await outboxWorker.getStats();
+      console.log("[OUTBOX STATS]", stats);
+    }, 30000);
   } catch (err) {
     console.error(err);
   }
 };
+
+// Graceful shutdown
+process.on("SIGTERM", () => {
+  console.log("SIGTERM received");
+  if (outboxWorker) {
+    outboxWorker.stop();
+  }
+  process.exit(0);
+});
+
+process.on("SIGINT", () => {
+  console.log("SIGINT received");
+  if (outboxWorker) {
+    outboxWorker.stop();
+  }
+  process.exit(0);
+});
 
 app.listen(3000, () => {
   console.log("Orders service listening on port 3000s.");

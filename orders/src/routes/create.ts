@@ -10,6 +10,7 @@ import {
 import { Order, OrderStatus } from "../models/order";
 import { TicketCache } from "../models/ticket-cache";
 import { OrderCreatedPublisher } from "../events/publishers/order-created-publisher";
+import { OutboxEvent } from "../models/outbox-event";
 
 const router = express.Router();
 
@@ -46,7 +47,8 @@ router.post(
       });
       await order.save();
 
-      await new OrderCreatedPublisher().publish({
+      // OUTBOX PATTERN: Uložení eventu do DB místo okamžitého publish
+      const eventPayload = {
         orderId: order.id,
         userId: order.userId,
         eventId: order.eventId,
@@ -55,7 +57,21 @@ router.post(
         expiresAt: order.expiresAt.toISOString(),
         pricePerTicket: order.pricePerTicket,
         version: order.version,
+      };
+
+      const outboxEvent = OutboxEvent.build({
+        exchange: "order:created",
+        payload: eventPayload,
+        aggregateId: order.id,
+        aggregateType: "Order",
+        eventType: "OrderCreated",
       });
+      await outboxEvent.save();
+
+      console.log(
+        `[OUTBOX] Event stored: ${outboxEvent.id} for order ${order.id}`
+      );
+
       res.status(201).send(order);
     } catch (err) {
       next(err);
