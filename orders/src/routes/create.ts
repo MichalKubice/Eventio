@@ -9,7 +9,6 @@ import {
 } from "@mkeventio/shared";
 import { Order, OrderStatus } from "../models/order";
 import { TicketCache } from "../models/ticket-cache";
-import { OrderCreatedPublisher } from "../events/publishers/order-created-publisher";
 import { OutboxEvent } from "../models/outbox-event";
 
 const router = express.Router();
@@ -41,13 +40,12 @@ router.post(
         userId: req.currentUser!.id,
         eventId: ticket.id,
         quantity,
-        pricePerTicket: ticket.price, // snapshot ceny
+        pricePerTicket: ticket.price,
         expiresAt,
         status: OrderStatus.PendingValidation,
       });
       await order.save();
 
-      // OUTBOX PATTERN: Uložení eventu do DB místo okamžitého publish
       const eventPayload = {
         orderId: order.id,
         userId: order.userId,

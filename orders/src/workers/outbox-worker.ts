@@ -13,7 +13,7 @@ export class OutboxWorker {
     batchSize?: number;
     maxRetries?: number;
   }) {
-    this.intervalMs = options?.intervalMs || 2000; // 2 sekundy
+    this.intervalMs = options?.intervalMs || 2000;
     this.batchSize = options?.batchSize || 10;
     this.maxRetries = options?.maxRetries || 3;
   }
@@ -79,11 +79,11 @@ export class OutboxWorker {
       await event.save();
 
       console.log(
-        `[OUTBOX WORKER] ✓ Published event ${event.id} (${event.eventType}) to ${event.exchange}`
+        `[OUTBOX WORKER] Published event ${event.id} (${event.eventType}) to ${event.exchange}`
       );
     } catch (error: any) {
       console.error(
-        `[OUTBOX WORKER] ✗ Failed to publish event ${event.id}:`,
+        `[OUTBOX WORKER] Failed to publish event ${event.id}:`,
         error.message
       );
 
