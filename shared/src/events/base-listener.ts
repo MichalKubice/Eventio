@@ -66,7 +66,6 @@ export abstract class BaseListener<T> {
         if (!msg) return;
 
         if (this.isShuttingDown) {
-          console.log(`[${this.queueName}] Rejecting message during shutdown`);
           channel.nack(msg, false, true);
           return;
         }

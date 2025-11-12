@@ -2,19 +2,19 @@ import http from 'k6/http';
 import { check, sleep } from 'k6';
 
 export const options = {
-  vus: 50, // počet virtuálních uživatelů
-  iterations: 1000, // počet requestů celkem
+  vus: 4,
+  duration: "2m",
   thresholds: {
-    http_req_duration: ['p(95)<250'], // 95 % odpovědí do 250 ms
+    http_req_duration: ["p(95)<30"],
   },
-  insecureSkipTLSVerify: true, // 🔒 ignoruj neplatný certifikát (jen pro test)
+  insecureSkipTLSVerify: true,
 };
 
 export default function () {
-  const url = 'https://eventio.dev/api/orders/sync';
+  const url = 'https://eventio.dev/api/orders';
   const payload = JSON.stringify({
-    ticketId: "691219a3b0ff96db93637e86",
-    quantity: 2,
+    ticketId: "691250ce587ea89f8c6bdb15",
+    quantity: 1,
   });
 
   const headers = {
@@ -26,16 +26,15 @@ export default function () {
   const res = http.post(url, payload, { headers });
 
   check(res, {
-    'status is 200': (r) => r.status === 200,
+    'status is 200': (r) => r.status === 201,
   });
 
   if (res.status === 200 && res.body) {
     try {
       const json = res.json();
       check(json, {
-        'communicationType is SYNCHRONOUS': (j) =>
-          j.communicationType === 'SYNCHRONOUS',
-        'status is awaiting:payment': (j) => j.status === 'awaiting:payment',
+        'communicationType is ASYNCHRONOUS': (j) =>
+          j.communicationType === 'ASYNCHRONOUS',
       });
     } catch (e) {
       console.error('JSON parse error:', e.message);
