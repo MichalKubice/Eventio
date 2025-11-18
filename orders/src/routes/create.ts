@@ -10,6 +10,7 @@ import {
 import { Order, OrderStatus } from "../models/order";
 import { TicketCache } from "../models/ticket-cache";
 import { OutboxEvent } from "../models/outbox-event";
+import { OrderCreatedPublisher } from "../events/publishers/order-created-publisher";
 
 const router = express.Router();
 
@@ -68,6 +69,16 @@ router.post(
       });
       await outboxEvent.save();
 
+      // await new OrderCreatedPublisher().publish({
+      //   orderId: order.id,
+      //   userId: order.userId,
+      //   eventId: order.eventId,
+      //   quantity: order.quantity,
+      //   status: order.status,
+      //   expiresAt: order.expiresAt.toISOString(),
+      //   pricePerTicket: order.pricePerTicket,
+      //   version: order.version,
+      // });
       const duration = Date.now() - startTime;
 
       console.log(
